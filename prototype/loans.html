@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow-Ledger · 借贷管理</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Component: SiteHeader -->
+    <header class="site-header">
+      <div class="site-header__inner">
+        <div class="brand">
+          <div class="brand__logo">FL</div>
+          <div>Flow-Ledger</div>
+        </div>
+        <nav class="nav">
+          <a href="./index.html">仪表盘</a>
+          <a href="./auth.html">登录</a>
+          <a href="./deposits.html">存款管理</a>
+          <a href="./expenses.html">消费管理</a>
+          <a class="active" href="./loans.html">借贷管理</a>
+        </nav>
+        <!-- Component: PrimaryActionButton -->
+        <button class="btn primary">新增借贷关系</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <!-- Component: SummaryCards -->
+      <section class="section">
+        <div class="section__header">
+          <div>
+            <div class="chip">借贷 · 应收 / 应付</div>
+            <h1 style="margin: 10px 0 6px; font-size: 32px">借贷管理</h1>
+            <p class="muted" style="margin: 0">管理个人与机构的借贷关系，跟踪应收应付与还款计划。</p>
+          </div>
+          <div class="pill-group">
+            <span class="pill active">多币种</span>
+            <span class="pill">提醒</span>
+            <span class="pill">自部署</span>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="card">
+            <div class="section__header">
+              <h3>应收总额</h3>
+              <span class="chip">折算 CNY</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+              <div>
+                <div style="font-size: 30px; font-weight: 700">¥ 48,000</div>
+                <div class="muted">含 USD/EUR 折算</div>
+              </div>
+              <div class="badge success">+1.2% 本月</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>应付总额</h3>
+              <span class="chip">折算 CNY</span>
+            </div>
+            <div style="font-size: 28px; font-weight: 700; color: var(--danger)">- ¥ 32,500</div>
+            <p class="muted" style="margin: 6px 0 0">主要为个人借款</p>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>净借贷</h3>
+              <span class="chip">示例数据</span>
+            </div>
+            <div style="font-size: 28px; font-weight: 700">+ ¥ 15,500</div>
+            <div class="bar" style="margin-top: 8px; --value: 62%"><span></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Component: LoansTabs -->
+      <section class="section">
+        <div class="section__header" style="margin-bottom: 16px">
+          <div class="tabs">
+            <button class="tab active">应收（Lent）</button>
+            <button class="tab">应付（Borrowed）</button>
+          </div>
+          <div class="pill-group">
+            <span class="pill active">全部</span>
+            <span class="pill">个人</span>
+            <span class="pill">机构</span>
+          </div>
+        </div>
+
+        <!-- Inline New Loan Form -->
+        <div class="card" style="margin-bottom: 16px">
+          <div class="section__header">
+            <h3>新增借贷关系</h3>
+            <span class="chip">示例表单</span>
+          </div>
+          <form class="quick-form">
+            <div class="input-row">
+              <label for="loan-counterparty">对象（个人/机构）</label>
+              <input id="loan-counterparty" type="text" placeholder="如：李华 / ABC Capital" />
+            </div>
+            <div class="input-row">
+              <label for="loan-type">类型</label>
+              <select id="loan-type">
+                <option>应收</option>
+                <option>应付</option>
+              </select>
+            </div>
+            <div class="input-row">
+              <label for="loan-currency">币种</label>
+              <select id="loan-currency">
+                <option>CNY</option>
+                <option>USD</option>
+                <option>EUR</option>
+                <option>JPY</option>
+              </select>
+            </div>
+            <div class="input-row">
+              <label for="loan-amount">金额</label>
+              <input id="loan-amount" type="text" placeholder="12000" />
+            </div>
+            <div class="input-row">
+              <label for="loan-due">到期日</label>
+              <input id="loan-due" type="date" />
+            </div>
+            <div class="toolbar" style="justify-content: flex-end">
+              <button class="btn" type="button">取消</button>
+              <button class="btn primary" type="button">保存借贷</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Component: DataTable -->
+        <div class="card">
+          <div class="section__header">
+            <h3>借贷列表</h3>
+            <div class="pill-group">
+              <span class="pill active">时间：本月</span>
+              <span class="pill">状态：全部</span>
+              <span class="pill">币种：全部</span>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>对象</th>
+                <th>类型</th>
+                <th>币种</th>
+                <th>余额</th>
+                <th>到期日</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>李华</td>
+                <td>应收</td>
+                <td>CNY</td>
+                <td>¥ 12,000</td>
+                <td>2026-02-10</td>
+                <td><span class="badge success">正常</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>ABC Capital</td>
+                <td>应收</td>
+                <td>USD</td>
+                <td>$ 2,800</td>
+                <td>2026-01-08</td>
+                <td><span class="badge warn">临近</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>张三</td>
+                <td>应付</td>
+                <td>CNY</td>
+                <td>¥ 8,500</td>
+                <td>2026-03-12</td>
+                <td><span class="badge success">正常</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>First Bank</td>
+                <td>应付</td>
+                <td>EUR</td>
+                <td>€ 1,200</td>
+                <td>2026-04-05</td>
+                <td><span class="badge warn">临近</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Component: RepaymentPlanPanel -->
+      <section class="section two-col">
+        <div class="card">
+          <div class="section__header" style="margin-bottom: 6px">
+            <h3>还款计划</h3>
+            <span class="chip">示例</span>
+          </div>
+          <ul class="list">
+            <li class="list-item">
+              <div>
+                <div style="font-weight: 700">下一笔 · 2026-01-08</div>
+                <div class="muted">ABC Capital · $ 1,400 · 应收</div>
+              </div>
+              <span class="badge warn">临近</span>
+            </li>
+            <li class="list-item">
+              <div>
+                <div style="font-weight: 700">2026-02-10</div>
+                <div class="muted">李华 · ¥ 12,000 · 应收</div>
+              </div>
+              <span class="badge success">正常</span>
+            </li>
+            <li class="list-item">
+              <div>
+                <div style="font-weight: 700">2026-03-12</div>
+                <div class="muted">张三 · ¥ 8,500 · 应付</div>
+              </div>
+              <span class="badge success">正常</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="card" style="border-color: var(--panel-strong); background: rgba(255, 255, 255, 0.03);">
+          <div class="section__header" style="margin-bottom: 6px">
+            <h3>提醒与操作</h3>
+            <span class="chip">策略</span>
+          </div>
+          <p class="muted" style="margin: 0 0 12px">设定还款提醒、自动化消息或导出计划。</p>
+          <div class="pill-group" style="margin-bottom: 12px">
+            <span class="pill active">短信</span>
+            <span class="pill">邮件</span>
+            <span class="pill">站内</span>
+          </div>
+          <button class="btn">导出计划</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Component: SiteFooter -->
+    <footer class="page" style="padding-top: 0; text-align: center; color: var(--muted); font-size: 14px">
+      <div>Flow-Ledger · 借贷管理 · 应收应付与还款计划</div>
+      <div style="margin-top: 6px">© 2026 Flow-Ledger. 静态原型，后续可替换为 React 组件。</div>
+    </footer>
+  </body>
+</html>

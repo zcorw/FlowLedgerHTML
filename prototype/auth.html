@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow-Ledger · 登录 / 绑定</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Component: SiteHeader -->
+    <header class="site-header">
+      <div class="site-header__inner">
+        <div class="brand">
+          <div class="brand__logo">FL</div>
+          <div>Flow-Ledger</div>
+        </div>
+        <nav class="nav">
+          <a class="active" href="#">登录</a>
+          <a href="#">注册</a>
+          <a href="#">帮助</a>
+        </nav>
+        <button class="btn primary">开始使用</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <div class="auth-hero">
+        <div class="chip">安全 · 自部署 · 多币种</div>
+        <h1 style="margin: 12px 0 8px; font-size: 32px">登录 / 绑定 Flow-Ledger</h1>
+        <p class="muted" style="margin: 0">
+          支持邮箱/用户名密码登录，或绑定已有账号后同步消费与存款数据。
+        </p>
+      </div>
+
+      <div class="auth-grid">
+        <!-- Component: AuthForm -->
+        <div class="card auth-card">
+          <div class="section__header" style="margin-bottom: 6px">
+            <h3>登录账户</h3>
+            <span class="chip">示例表单</span>
+          </div>
+          <form class="quick-form">
+            <div class="input-row">
+              <label for="identifier">邮箱 / 用户名</label>
+              <input id="identifier" type="text" placeholder="hi@flow-ledger.io / yourname" />
+            </div>
+            <div class="input-row">
+              <label for="password">密码</label>
+              <input id="password" type="password" placeholder="••••••••" />
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+              <span class="muted" style="font-size: 14px">建议使用 12 位以上复杂密码</span>
+              <a class="pill" href="#">查看密码要求</a>
+            </div>
+            <button class="btn primary" type="button">登录 / 绑定</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 4px">
+              <a class="link-quiet" href="#">忘记密码</a>
+              <a class="link-quiet" href="#">快速注册</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+
+    <!-- Component: SiteFooter -->
+    <footer class="page" style="padding-top: 0; text-align: center; color: var(--muted); font-size: 14px">
+      <div>Flow-Ledger · 个人资产管理 · 多币种记账与自部署</div>
+      <div style="margin-top: 6px">© 2026 Flow-Ledger. 本页面示例用于快速迭代样式，后续可替换为 React 组件。</div>
+    </footer>
+  </body>
+</html>

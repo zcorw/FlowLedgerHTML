@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow-Ledger · 消费管理</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Component: SiteHeader -->
+    <header class="site-header">
+      <div class="site-header__inner">
+        <div class="brand">
+          <div class="brand__logo">FL</div>
+          <div>Flow-Ledger</div>
+        </div>
+        <nav class="nav">
+          <a href="./index.html">仪表盘</a>
+          <a href="./auth.html">登录</a>
+          <a href="./deposits.html">存款管理</a>
+          <a class="active" href="./expenses.html">消费管理</a>
+          <a href="#">设置</a>
+        </nav>
+        <button class="btn primary">快速记一笔</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <!-- Component: SummaryCards -->
+      <section class="section">
+        <div class="section__header">
+          <div>
+            <div class="chip">消费 · 多币种</div>
+            <h1 style="margin: 10px 0 6px; font-size: 32px">消费管理</h1>
+            <p class="muted" style="margin: 0">记录日常支出，快速记账并查看分析。</p>
+          </div>
+          <button class="btn primary">导出本月</button>
+        </div>
+        <div class="stat-grid">
+          <div class="card">
+            <div class="section__header">
+              <h3>本月支出</h3>
+              <span class="chip">折算 CNY</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+              <div>
+                <div style="font-size: 30px; font-weight: 700; color: var(--danger)">- ¥ 6,820</div>
+                <div class="muted">含多币种 -$ 937</div>
+              </div>
+              <div class="badge success">预算剩余 43%</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>日均支出</h3>
+              <span class="chip">近 7 天</span>
+            </div>
+            <div style="font-size: 28px; font-weight: 700; color: var(--danger)">- ¥ 228</div>
+            <p class="muted" style="margin: 6px 0 0">环比下降 4.2%</p>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>主要分类</h3>
+              <span class="chip">前 3 占比 68%</span>
+            </div>
+            <p style="margin: 6px 0 12px; font-weight: 600">餐饮 / 居住 / 出行</p>
+            <div class="bar" style="--value: 68%"><span></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Component: QuickAddExpenseForm -->
+      <section class="section two-col">
+        <div class="card">
+          <div class="section__header">
+            <h3>快速记一笔</h3>
+            <span class="chip">示例表单</span>
+          </div>
+          <form class="quick-form">
+            <div class="input-row">
+              <label for="amount">金额</label>
+              <input id="amount" type="text" placeholder="-86.00" />
+            </div>
+            <div class="input-row">
+              <label for="currency">币种</label>
+              <select id="currency">
+                <option>CNY</option>
+                <option>USD</option>
+                <option>EUR</option>
+                <option>JPY</option>
+              </select>
+            </div>
+            <div class="input-row">
+              <label for="category">分类</label>
+              <input id="category" type="text" placeholder="餐饮 / 出行 / 订阅" />
+            </div>
+            <div class="input-row">
+              <label for="note">备注</label>
+              <input id="note" type="text" placeholder="例如：午餐 / 出差交通" />
+            </div>
+            <div class="input-row">
+              <label for="date">日期</label>
+              <input id="date" type="date" />
+            </div>
+            <button class="btn primary" type="button">保存</button>
+          </form>
+        </div>
+
+        <!-- Component: AnalysisCards -->
+        <div class="analysis-grid">
+          <div class="card">
+            <div class="section__header">
+              <h3>分类占比</h3>
+              <span class="chip">本月</span>
+            </div>
+            <div class="list">
+              <div class="list-item" style="border: none; background: transparent; padding: 6px 0">
+                <div>餐饮 32%</div>
+                <div class="bar" style="width: 140px; --value: 32%"><span></span></div>
+              </div>
+              <div class="list-item" style="border: none; background: transparent; padding: 6px 0">
+                <div>居住 24%</div>
+                <div class="bar" style="width: 140px; --value: 24%"><span></span></div>
+              </div>
+              <div class="list-item" style="border: none; background: transparent; padding: 6px 0">
+                <div>出行 12%</div>
+                <div class="bar" style="width: 140px; --value: 12%"><span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section__header">
+              <h3>币种占比</h3>
+              <span class="chip">多币种</span>
+            </div>
+            <div class="list">
+              <div class="list-item" style="border: none; background: transparent; padding: 6px 0">
+                <div>CNY 76%</div>
+                <div class="bar" style="width: 140px; --value: 76%"><span></span></div>
+              </div>
+              <div class="list-item" style="border: none; background: transparent; padding: 6px 0">
+                <div>USD 18%</div>
+                <div class="bar" style="width: 140px; --value: 18%"><span></span></div>
+              </div>
+              <div class="list-item" style="border: none; background: transparent; padding: 6px 0">
+                <div>EUR 6%</div>
+                <div class="bar" style="width: 140px; --value: 6%"><span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Component: FiltersBar -->
+      <section class="section">
+        <div class="card" style="margin-bottom: 12px">
+          <div class="toolbar">
+            <span class="pill active">时间：本周</span>
+            <span class="pill">分类：全部</span>
+            <span class="pill">币种：全部</span>
+            <span class="pill">关键字</span>
+          </div>
+        </div>
+
+        <!-- Component: DataTable -->
+        <div class="card">
+          <div class="section__header">
+            <h3>消费明细</h3>
+            <div class="pill-group">
+              <span class="pill active">全部</span>
+              <span class="pill">餐饮</span>
+              <span class="pill">交通</span>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>分类</th>
+                <th>金额</th>
+                <th>币种</th>
+                <th>备注</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>09-12</td>
+                <td>餐饮</td>
+                <td style="color: var(--danger); font-weight: 700">- ¥ 86.00</td>
+                <td>CNY</td>
+                <td>午餐</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>09-11</td>
+                <td>出行</td>
+                <td style="color: var(--danger); font-weight: 700">- ¥ 32.00</td>
+                <td>CNY</td>
+                <td>地铁</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>09-10</td>
+                <td>订阅</td>
+                <td style="color: var(--danger); font-weight: 700">- $ 29.00</td>
+                <td>USD</td>
+                <td>云服务</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Component: SiteFooter -->
+    <footer class="page" style="padding-top: 0; text-align: center; color: var(--muted); font-size: 14px">
+      <div>Flow-Ledger · 日常消费记录与分析</div>
+      <div style="margin-top: 6px">© 2026 Flow-Ledger. 本页面为静态原型，后续可替换为 React 组件。</div>
+    </footer>
+  </body>
+</html>

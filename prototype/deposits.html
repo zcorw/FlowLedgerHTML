@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow-Ledger · 存款管理</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Component: SiteHeader -->
+    <header class="site-header">
+      <div class="site-header__inner">
+        <div class="brand">
+          <div class="brand__logo">FL</div>
+          <div>Flow-Ledger</div>
+        </div>
+        <nav class="nav">
+          <a href="./index.html">仪表盘</a>
+          <a href="./auth.html">登录</a>
+          <a class="active" href="./deposits.html">存款管理</a>
+          <a href="#">汇率</a>
+          <a href="#">设置</a>
+        </nav>
+        <button class="btn primary">快速记一笔</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <!-- Component: PageTitleBar -->
+      <section class="section">
+        <div class="section__header">
+          <div>
+            <div class="chip">资产 · 多机构</div>
+            <h1 style="margin: 10px 0 6px; font-size: 32px">存款管理</h1>
+            <p class="muted" style="margin: 0">统一管理多机构资产记录，资产视图与机构视图一页切换。</p>
+          </div>
+          <button class="btn primary">新增资产/账户</button>
+        </div>
+      </section>
+
+      <!-- Component: SummaryCards -->
+      <section class="section">
+        <div class="stat-grid">
+          <div class="card">
+            <div class="section__header">
+              <h3>总存款</h3>
+              <span class="chip">折算 CNY</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+              <div>
+                <div style="font-size: 30px; font-weight: 700">¥ 186,420</div>
+                <div class="muted">含多币种 $25,920</div>
+              </div>
+              <div class="badge success">+2.3% 本月</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>机构数</h3>
+              <span class="chip">含银行/券商</span>
+            </div>
+            <div style="font-size: 28px; font-weight: 700">5</div>
+            <p class="muted" style="margin: 6px 0 0">新接入 1 家</p>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>币种数</h3>
+              <span class="chip">CNY / USD / EUR / JPY</span>
+            </div>
+            <div style="font-size: 28px; font-weight: 700">4</div>
+            <p class="muted" style="margin: 6px 0 0">支持自定义</p>
+          </div>
+          <div class="card">
+            <div class="section__header">
+              <h3>本月变动</h3>
+              <span class="chip">示例数据</span>
+            </div>
+            <div class="bar" style="margin: 8px 0 6px; --value: 68%"><span></span></div>
+            <p class="muted" style="margin: 0">入金 8,200 · 出金 3,600</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Component: DepositsTabs -->
+      <section class="section">
+        <div class="section__header" style="margin-bottom: 18px">
+          <div class="tabs">
+            <button class="tab active">资产</button>
+            <button class="tab">机构</button>
+          </div>
+          <div class="pill-group">
+            <span class="pill active">多币种</span>
+            <span class="pill">安全</span>
+            <span class="pill">自部署</span>
+          </div>
+        </div>
+
+        <!-- Component: FiltersBar -->
+        <div class="card" style="margin-bottom: 16px">
+          <div class="toolbar">
+            <span class="pill active">时间：本月</span>
+            <span class="pill">机构：全部</span>
+            <span class="pill">币种：全部</span>
+            <span class="pill">关键字</span>
+          </div>
+        </div>
+
+        <!-- Component: DepositsTable -->
+        <div class="card">
+          <div class="section__header">
+            <h3>资产明细</h3>
+            <div class="pill-group">
+              <span class="pill active">全部</span>
+              <span class="pill">银行</span>
+              <span class="pill">券商</span>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>机构</th>
+                <th>账户 / 资产</th>
+                <th>币种</th>
+                <th>余额</th>
+                <th>折算（CNY）</th>
+                <th>更新时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>招商银行</td>
+                <td>储蓄账户</td>
+                <td>CNY</td>
+                <td>¥ 58,400</td>
+                <td>¥ 58,400</td>
+                <td>09-12 09:20</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>建设银行</td>
+                <td>定投 · 12 期</td>
+                <td>CNY</td>
+                <td>¥ 32,000</td>
+                <td>¥ 32,000</td>
+                <td>09-05 11:05</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>美国银行</td>
+                <td>Savings</td>
+                <td>USD</td>
+                <td>$ 4,820</td>
+                <td>¥ 34,600</td>
+                <td>09-10 21:10</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">查看</span>
+                    <span class="pill">编辑</span>
+                    <span class="pill">删除</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Component: InstitutionList -->
+      <section class="section">
+        <div class="section__header">
+          <h3>机构管理</h3>
+          <div class="pill-group">
+            <button class="btn">新增机构</button>
+            <span class="pill active">全部</span>
+            <span class="pill">启用</span>
+            <span class="pill">停用</span>
+          </div>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>机构名称</th>
+                <th>类型</th>
+                <th>备注</th>
+                <th>关联资产数</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>招商银行</td>
+                <td>银行</td>
+                <td>主力结算账户</td>
+                <td>4</td>
+                <td><span class="badge success">启用</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">停用</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>先锋证券</td>
+                <td>券商</td>
+                <td>美股与基金</td>
+                <td>3</td>
+                <td><span class="badge success">启用</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">停用</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>现金</td>
+                <td>现金</td>
+                <td>备用金</td>
+                <td>1</td>
+                <td><span class="badge warn">停用</span></td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">启用</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Component: InstitutionEditor -->
+      <section class="section">
+        <div class="two-col">
+          <div class="card">
+            <div class="section__header" style="margin-bottom: 6px">
+              <h3>机构编辑</h3>
+              <span class="chip">侧栏示例</span>
+            </div>
+            <form class="quick-form">
+              <div class="input-row">
+                <label for="org-name">机构名称</label>
+                <input id="org-name" type="text" placeholder="如：招商银行 / 先锋证券" />
+              </div>
+              <div class="input-row">
+                <label for="org-type">类型</label>
+                <select id="org-type">
+                  <option>银行</option>
+                  <option>券商</option>
+                  <option>现金</option>
+                  <option>其他</option>
+                </select>
+              </div>
+              <div class="input-row">
+                <label for="org-note">备注</label>
+                <input id="org-note" type="text" placeholder="用途 / 说明" />
+              </div>
+              <div class="input-row">
+                <label for="org-status">状态</label>
+                <select id="org-status">
+                  <option>启用</option>
+                  <option>停用</option>
+                </select>
+              </div>
+              <div class="toolbar" style="justify-content: flex-end">
+                <button class="btn">取消</button>
+                <button class="btn primary" type="button">保存</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card" style="border-color: var(--panel-strong); background: rgba(255, 255, 255, 0.03);">
+            <div class="section__header" style="margin-bottom: 6px">
+              <h3>操作提示</h3>
+              <span class="chip">示例</span>
+            </div>
+            <ul class="list">
+              <li class="list-item" style="background: transparent; border-color: var(--border);">
+                <span>编辑机构会影响绑定的资产折算</span>
+                <span class="muted">请确认类型与币种</span>
+              </li>
+              <li class="list-item" style="background: transparent; border-color: var(--border);">
+                <span>停用机构不会删除历史记录</span>
+                <span class="muted">可随时重新启用</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Component: SiteFooter -->
+    <footer class="page" style="padding-top: 0; text-align: center; color: var(--muted); font-size: 14px">
+      <div>Flow-Ledger · 多机构资产管理 · 多币种折算</div>
+      <div style="margin-top: 6px">© 2026 Flow-Ledger. 本页面为静态原型，后续可替换为 React 组件与实时接口。</div>
+    </footer>
+  </body>
+</html>

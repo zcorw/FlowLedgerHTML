@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow-Ledger · 通知任务</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Component: SiteHeader -->
+    <header class="site-header">
+      <div class="site-header__inner">
+        <div class="brand">
+          <div class="brand__logo">FL</div>
+          <div>Flow-Ledger</div>
+        </div>
+        <nav class="nav">
+          <a href="./index.html">仪表盘</a>
+          <a href="./auth.html">登录</a>
+          <a href="./deposits.html">存款管理</a>
+          <a href="./expenses.html">消费管理</a>
+          <a class="active" href="./notifications.html">通知任务</a>
+        </nav>
+        <!-- Component: PrimaryActionButton -->
+        <button class="btn primary">新建任务</button>
+      </div>
+    </header>
+
+    <main class="page">
+      <!-- Component: PageTitleBar -->
+      <section class="section">
+        <div class="section__header">
+          <div>
+            <div class="chip">自动化 · 提醒 · 记账</div>
+            <h1 style="margin: 10px 0 6px; font-size: 32px">通知任务</h1>
+            <p class="muted" style="margin: 0">
+              管理定时提醒任务，用户在 Telegram 确认后自动记账，可查看执行日志。
+            </p>
+          </div>
+          <div class="pill-group">
+            <span class="pill active">启用</span>
+            <span class="pill">暂停</span>
+            <span class="pill">全部</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Component: TasksTable -->
+      <section class="section">
+        <div class="card">
+          <div class="section__header">
+            <h3>任务列表</h3>
+            <div class="pill-group">
+              <span class="pill active">全部</span>
+              <span class="pill">每天</span>
+              <span class="pill">每周</span>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>任务名称</th>
+                <th>触发时间 / 频率</th>
+                <th>关联记账规则</th>
+                <th>状态</th>
+                <th>最近执行</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>每日午餐记账</td>
+                <td>每天 12:30</td>
+                <td>餐饮 · ¥ 45 · 备注：午餐</td>
+                <td><span class="badge success">启用</span></td>
+                <td>09-12 12:31 成功</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">暂停</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>周五对账提醒</td>
+                <td>每周五 18:00</td>
+                <td>无自动记账（仅提醒）</td>
+                <td><span class="badge success">启用</span></td>
+                <td>09-08 18:00 成功</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">暂停</span>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>信用卡还款</td>
+                <td>每月 25 日 10:00</td>
+                <td>财务 · ¥ 3,200 · 备注：信用卡</td>
+                <td><span class="badge warn">暂停</span></td>
+                <td>09-01 10:00 失败</td>
+                <td>
+                  <div class="pill-group">
+                    <span class="pill">编辑</span>
+                    <span class="pill">启用</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Component: TaskEditor -->
+      <section class="section two-col">
+        <div class="card">
+          <div class="section__header" style="margin-bottom: 6px">
+            <h3>新建 / 编辑任务</h3>
+            <span class="chip">示例表单</span>
+          </div>
+          <form class="quick-form">
+            <div class="input-row">
+              <label for="task-name">任务名称</label>
+              <input id="task-name" type="text" placeholder="如：每日午餐记账" />
+            </div>
+            <div class="input-row">
+              <label for="task-frequency">频率</label>
+              <select id="task-frequency">
+                <option>每天</option>
+                <option>每周</option>
+                <option>自定义</option>
+              </select>
+            </div>
+            <div class="input-row">
+              <label for="task-time">提醒时间</label>
+              <input id="task-time" type="time" />
+            </div>
+            <div class="input-row">
+              <label for="task-timeout">确认超时策略</label>
+              <select id="task-timeout">
+                <option>超时不记账</option>
+                <option>超时自动记账</option>
+              </select>
+            </div>
+            <div class="input-row">
+              <label for="task-rule">自动记账规则</label>
+              <input id="task-rule" type="text" placeholder="类别 / 金额 / 备注模板" />
+            </div>
+            <div class="toolbar" style="justify-content: flex-end">
+              <button class="btn" type="button">取消</button>
+              <button class="btn primary" type="button">保存任务</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Component: ExecutionLogTable -->
+        <div class="card" style="border-color: var(--panel-strong); background: rgba(255, 255, 255, 0.03);">
+          <div class="section__header">
+            <h3>执行日志</h3>
+            <div class="pill-group">
+              <span class="pill active">全部</span>
+              <span class="pill">成功</span>
+              <span class="pill">失败</span>
+              <span class="pill">待确认</span>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>结果</th>
+                <th>原因</th>
+                <th>关联记录</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>09-12 12:31</td>
+                <td><span class="badge success">成功</span></td>
+                <td>用户已确认</td>
+                <td>午餐 · ¥ 45 · 餐饮</td>
+              </tr>
+              <tr>
+                <td>09-01 10:00</td>
+                <td><span class="badge warn">失败</span></td>
+                <td>超时未确认</td>
+                <td>信用卡还款 · ¥ 3,200</td>
+              </tr>
+              <tr>
+                <td>08-30 18:00</td>
+                <td><span class="badge">待确认</span></td>
+                <td>等待用户操作</td>
+                <td>对账提醒 · 无记账</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Component: SiteFooter -->
+    <footer class="page" style="padding-top: 0; text-align: center; color: var(--muted); font-size: 14px">
+      <div>Flow-Ledger · 通知任务 · 自动化记账与日志</div>
+      <div style="margin-top: 6px">© 2026 Flow-Ledger. 静态原型，后续可替换为 React 组件与实时接口。</div>
+    </footer>
+  </body>
+</html>

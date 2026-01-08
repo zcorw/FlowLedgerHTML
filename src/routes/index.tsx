@@ -1,0 +1,37 @@
+import { Box, Button, Chip, Grid, Stack, Typography } from '@mui/material';
+import { Link, Route, Routes } from 'react-router-dom';
+import DashboardPage from '../pages/dashboard';
+import LoginPage from '../pages/Login';
+import RegisterPage from '../pages/Register';
+import ExpensesPage from '@/pages/Expenses';
+
+const PlaceholderPage = ({ title, description }: { title: string; description?: string }) => (
+  <Box pt={6} pb={4}>
+    <Stack spacing={2} alignItems="center" textAlign="center">
+      <Typography variant="h4" fontWeight={700}>
+        {title}
+      </Typography>
+      {description && (
+        <Typography color="text.secondary" maxWidth={520}>
+          {description}
+        </Typography>
+      )}
+      <Button variant="contained" component={Link} to="/" sx={{ mt: 1 }}>
+        返回仪表盘
+      </Button>
+    </Stack>
+  </Box>
+);
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<DashboardPage />} />
+    <Route path="/expenses" element={<ExpensesPage />} />
+    <Route path="/deposits" element={<PlaceholderPage title="存款管理" description="待接入存款账户与流水明细。" />} />
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="*" element={<PlaceholderPage title="未找到页面" description="请返回仪表盘查看主要数据。" />} />
+  </Routes>
+);
+
+export default AppRoutes;
