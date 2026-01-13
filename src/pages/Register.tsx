@@ -38,7 +38,10 @@ const RegisterPage = () => {
 
     setErrors({});
     const values = parsed.data;
-    register(values).catch((err) => {
+    register(values).then(() => {
+      enqueueSnackbar('注册成功！', { severity: 'success' });
+      window.location.href = '/';
+    }).catch((err) => {
       enqueueSnackbar(err?.response?.data?.message || '注册失败，请稍后重试', { severity: 'error' });
     });
   };

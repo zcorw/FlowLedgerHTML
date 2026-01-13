@@ -6,3 +6,6 @@ export { default as UpcomingPaymentsCard } from './UpcomingPaymentsCard';
 export { default as TopCategoriesCard } from './TopCategoriesCard';
 export { default as CategoryRatioCard } from './CategoryRatioCard';
 export { default as ExpenseDetailsCard } from './ExpenseDetailsCard';
+export { default as DepositsTotalCard } from './DepositsTotalCard';
+export { default as AssetDetailsCard } from './AssetDetailsCard';
+export { default as InstitutionDetailsCard } from './InstitutionDetailsCard';

@@ -29,3 +29,5 @@ lerna-debug.log*
 # editors
 .vscode
 .idea
+
+prototype/openapi
