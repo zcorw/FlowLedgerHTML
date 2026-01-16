@@ -1,4 +1,4 @@
-import { get, patch, post } from './client';
+import { del, get, patch, post } from './client';
 
 export type InstitutionType = 'bank' | 'broker' | 'other';
 
@@ -10,6 +10,7 @@ export type Institution = {
   id: number;
   name: string;
   type: InstitutionType;
+  status: 'active' | 'inactive';
   product_number: number;
 };
 
@@ -77,6 +78,44 @@ export type BalanceList = {
   data: Balance[];
 };
 
+export type ImportSectionResult = {
+  total: number;
+  created: number;
+  exists: number;
+  failed: number;
+};
+
+export type ImportInstitutionResult = {
+  institution_key: string;
+  institution_id: number | null;
+  status: 'created' | 'exists' | 'failed';
+  error?: string | null;
+};
+
+export type ImportProductResult = {
+  product_key: string;
+  institution_key: string;
+  product_id: number | null;
+  status: 'created' | 'exists' | 'failed';
+  error?: string | null;
+};
+
+export type ImportBalanceResult = {
+  product_key: string;
+  as_of: string;
+  status: 'created' | 'exists' | 'failed';
+  error?: string | null;
+};
+
+export type ImportDepositResponse = {
+  institutions: ImportSectionResult;
+  products: ImportSectionResult;
+  product_balances: ImportSectionResult;
+  institution_items: ImportInstitutionResult[];
+  product_items: ImportProductResult[];
+  balance_items: ImportBalanceResult[];
+};
+
 export type BalanceCreate = {
   amount: string;
   as_of: string; // ISO date-time
@@ -129,6 +168,18 @@ export async function updateInstitution(id: number, payload: InstitutionPatch) {
 }
 
 /**
+ * 删除机构（默认软删除，hard=true 时硬删除）。
+ * Header X-Confirm-Delete 必填：软删传 YES，硬删传 HARD-YES。
+ */
+export async function deleteInstitution(id: number, hard = false) {
+  const confirm = hard ? 'HARD-YES' : 'YES';
+  return del<Institution>(`/institutions/${id}`, {
+    params: { hard },
+    headers: { 'X-Confirm-Delete': confirm },
+  });
+}
+
+/**
  * 产品列表（分页，可按机构/类型/状态/风险过滤）
  */
 export async function listProducts(params?: ListProductsParams) {
@@ -152,6 +203,18 @@ export async function updateProduct(id: number, payload: ProductPatch) {
 }
 
 /**
+ * 删除产品（默认软删除，hard=true 时硬删除）。
+ * Header X-Confirm-Delete 必填：软删传 YES，硬删传 HARD-YES。
+ */
+export async function deleteProduct(id: number, hard = false) {
+  const confirm = hard ? 'HARD-YES' : 'YES';
+  return del<Product>(`/products/${id}`, {
+    params: { hard },
+    headers: { 'X-Confirm-Delete': confirm },
+  });
+}
+
+/**
  * 查询产品余额历史（分页，支持时间范围）
  */
 export async function listProductBalances(productId: number, params?: ListProductBalancesParams) {
@@ -163,4 +226,14 @@ export async function listProductBalances(productId: number, params?: ListProduc
  */
 export async function createBalance(productId: number, payload: BalanceCreate) {
   return post<Balance>(`/products/${productId}/balances`, payload);
+}
+
+/**
+ * Bulk import institutions, products, and balances via multipart upload.
+ * Expects a FormData with a single `file` field (Excel/CSV supported by backend).
+ */
+export async function importDeposit(file: File | Blob) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return post<ImportDepositResponse>('/import/deposit', formData);
 }

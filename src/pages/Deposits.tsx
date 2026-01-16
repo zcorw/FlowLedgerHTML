@@ -1,26 +1,32 @@
-﻿import { useEffect, useState, useMemo } from "react";
-import { Box, Button, Chip, Grid, Stack, Typography } from "@mui/material";
+﻿import type { ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Box, Button, Grid, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import { AssetDetailsCard, DepositsTotalCard, InstitutionDetailsCard } from "@/components/Cards/index";
-import DepositDialog, { DepositSubmitPayload } from "@/components/Dialogs/DepositDialog";
+import { AssetDetailsCard, DepositsTotalCard, InstitutionDetailsCard } from "@/components/Cards";
+import DepositDialog, { type DepositSubmitPayload } from "@/components/Dialogs/DepositDialog";
 import {
-  createProduct,
   createInstitution,
-  listProducts,
+  createProduct,
+  importDeposit,
   listInstitutions,
-  type ProductCreate,
-  type ProductType,
-  type Product,
-  type ListProductsParams,
-  type ListInstitutionsParams,
+  listProducts,
+  deleteInstitution,
+  deleteProduct,
   type Institution,
   type InstitutionType,
+  type ListInstitutionsParams,
+  type ListProductsParams,
+  type Product,
+  type ProductCreate,
+  type ProductType,
 } from "@/api/deposits";
 import TabButtons from "@/components/TabButtons";
-import useCurrencyStore, { selectCurrencies } from "@/store/currency";
 import type { AssetRow } from "@/components/Cards/AssetDetailsCard";
 import type { FilterItem } from "@/components/Tables/TableFilter";
 import type { InstitutionRow } from "@/components/Cards/InstitutionDetailsCard";
+import useCurrencyStore, { selectCurrencies } from "@/store/currency";
+import { enqueueSnackbar } from "@/store/snackbar";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const tabs = [
   { label: "资产", value: "asset" },
@@ -70,9 +76,15 @@ const institutionFilterItems: FilterItem[] = [
 const DepositsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tabValue, setTabValue] = useState<string>("asset");
-  const [tableFilter, setTableFilter] = useState<{ product_type: ProductType | "all"; currency: string; keyword: string }>({
+  const [tableFilter, setTableFilter] = useState<{
+    product_type: ProductType | "all";
+    currency: string;
+    institution_id: number | "all";
+    keyword: string;
+  }>({
     product_type: "all",
     currency: "all",
+    institution_id: "all",
     keyword: "",
   });
   const [page, setPage] = useState(1);
@@ -85,6 +97,17 @@ const DepositsPage = () => {
     type: "all",
     keyword: "",
   });
+  const [importing, setImporting] = useState(false);
+  const [institutionOptions, setInstitutionOptions] = useState<{ label: string; value: number }[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    type: "asset" | "institution";
+    id?: string;
+    name?: string;
+  }>({ open: false, type: "asset" });
+  const [deleting, setDeleting] = useState(false);
 
   const currencyMap = useCurrencyStore(selectCurrencies);
 
@@ -93,14 +116,27 @@ const DepositsPage = () => {
       key: "currency",
       label: "币种",
       type: "menu",
-      options: currencyMap.map((currency) => ({ label: currency.code, value: currency.code })),
+      options: [
+        { label: "全部", value: "all" }, 
+        ...currencyMap.map((currency) => ({ label: currency.code, value: currency.code })),
+      ],
+    };
+    const institutionItem: FilterItem = {
+      key: "institution_id",
+      label: "机构",
+      type: "menu",
+      options: [
+        { label: "全部", value: "all" },
+        ...institutionOptions.map((opt) => ({ label: opt.label, value: opt.value })),
+      ],
     };
     return [
       ...filterItems.slice(0, -1),
+      institutionItem,
       item,
       ...filterItems.slice(-1),
     ];
-  }, [currencyMap]);
+  }, [currencyMap, institutionOptions]);
 
   const handleOpenDialog = () => setDialogOpen(true);
   const handleCloseDialog = () => setDialogOpen(false);
@@ -147,6 +183,64 @@ const DepositsPage = () => {
     setInstitutionPage(1);
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      await importDeposit(file);
+      enqueueSnackbar("导入任务已提交，请稍后刷新列表", { severity: "success" });
+      setRefreshKey((prev) => prev + 1);
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error?.message || "导入失败，请稍后重试";
+      enqueueSnackbar(message, { severity: "error" });
+    } finally {
+      setImporting(false);
+      event.target.value = "";
+    }
+  };
+
+  const requestDeleteAsset = (row: AssetRow) => {
+    setConfirmState({ open: true, type: "asset", id: row.id, name: row.account });
+  };
+
+  const requestDeleteInstitution = (row: InstitutionRow) => {
+    setConfirmState({ open: true, type: "institution", id: row.id, name: row.name });
+  };
+
+  const handleCloseConfirm = () => {
+    if (deleting) return;
+    setConfirmState((prev) => ({ ...prev, open: false }));
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.id) return;
+    setDeleting(true);
+    try {
+      if (confirmState.type === "asset") {
+        await deleteProduct(Number(confirmState.id));
+        enqueueSnackbar("资产删除成功", { severity: "success" });
+      } else {
+        await deleteInstitution(Number(confirmState.id));
+        enqueueSnackbar("机构删除成功", { severity: "success" });
+      }
+      setRefreshKey((prev) => prev + 1);
+      setConfirmState((prev) => ({ ...prev, open: false }));
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        (confirmState.type === "asset" ? "资产删除失败，请稍后重试" : "机构删除失败，请稍后重试");
+      enqueueSnackbar(message, { severity: "error" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     if (tabValue !== "asset") return;
 
@@ -156,6 +250,7 @@ const DepositsPage = () => {
         page_size: rowsPerPage,
         currency: tableFilter.currency !== "all" ? tableFilter.currency : undefined,
         product_type: tableFilter.product_type !== "all" ? tableFilter.product_type : undefined,
+        institution_id: tableFilter.institution_id !== "all" ? Number(tableFilter.institution_id) : undefined,
       };
 
       const res = await listProducts(params);
@@ -174,6 +269,7 @@ const DepositsPage = () => {
           currency: product.currency,
           balance: formatAmount(product.currency, product.amount),
           updatedAt: product.amount_updated_at ? dayjs(product.amount_updated_at).format("YYYY-MM-DD") : "--",
+          status: product.status,
         }));
 
       setRows(mapped);
@@ -183,7 +279,15 @@ const DepositsPage = () => {
     };
 
     fetchProducts();
-  }, [page, tableFilter.product_type, tableFilter.currency, tableFilter.keyword, tabValue]);
+  }, [
+    page,
+    tableFilter.product_type,
+    tableFilter.currency,
+    tableFilter.institution_id,
+    tableFilter.keyword,
+    tabValue,
+    refreshKey,
+  ]);
 
   useEffect(() => {
     if (tabValue !== "institution") return;
@@ -203,6 +307,7 @@ const DepositsPage = () => {
         name: inst.name,
         type: inst.type,
         assetNum: inst.product_number,
+        status: inst.status,
       }));
 
       setInstitutionRows(mapped);
@@ -212,7 +317,19 @@ const DepositsPage = () => {
     };
 
     fetchInstitutions();
-  }, [tabValue, institutionPage, institutionFilter.type, institutionFilter.keyword]);
+  }, [tabValue, institutionPage, institutionFilter.keyword, institutionFilter.type, refreshKey]);
+
+  useEffect(() => {
+    const loadInstitutions = async () => {
+      try {
+        const res = await listInstitutions({ page: 1, page_size: 200 });
+        setInstitutionOptions(res.data.map((inst) => ({ label: inst.name, value: inst.id })));
+      } catch (error: any) {
+        console.error("Failed to fetch institutions for filter", error);
+      }
+    };
+    loadInstitutions();
+  }, []);
 
   return (
     <Box pt={6}>
@@ -221,9 +338,21 @@ const DepositsPage = () => {
           <Typography variant="h4" component="h1" style={{ fontWeight: 700 }}>
             存款管理
           </Typography>
-          <Button variant="outlined" color="primary" onClick={handleOpenDialog}>
-            新增资产/机构
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" color="primary" onClick={handleOpenDialog}>
+              新增资产/机构
+            </Button>
+            <Button variant="contained" color="primary" onClick={handleImportClick} disabled={importing}>
+              {importing ? "导入中..." : "批量导入"}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              hidden
+              onChange={handleImportFile}
+            />
+          </Stack>
         </Stack>
 
         <Grid container spacing={2}>
@@ -247,6 +376,7 @@ const DepositsPage = () => {
               filters={assetFilters}
               selectedFilters={tableFilter}
               onFilterChange={onFilterChange}
+              onDelete={requestDeleteAsset}
               rows={rows}
               page={page}
               pageCount={pageCount}
@@ -259,6 +389,7 @@ const DepositsPage = () => {
               filters={institutionFilterItems}
               selectedFilters={institutionFilter}
               onFilterChange={onInstitutionFilterChange}
+              onDelete={requestDeleteInstitution}
               rows={institutionRows}
               page={institutionPage}
               pageCount={institutionPageCount}
@@ -268,6 +399,15 @@ const DepositsPage = () => {
         </Grid>
 
         <DepositDialog open={dialogOpen} onClose={handleCloseDialog} onSubmit={handleSubmit} />
+        <ConfirmDialog
+          open={confirmState.open}
+          title="确认删除"
+          description={`确认删除${confirmState.type === "asset" ? "资产" : "机构"}${confirmState.name ? `“${confirmState.name}”` : ""}？`}
+          onCancel={handleCloseConfirm}
+          onConfirm={handleConfirmDelete}
+          confirmText="确认删除"
+          loading={deleting}
+        />
       </Stack>
     </Box>
   );

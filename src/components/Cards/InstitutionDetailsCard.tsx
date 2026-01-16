@@ -1,4 +1,4 @@
-import { Button, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Grid, Stack, Typography } from '@mui/material';
 import { Table, Filter } from '../Tables';
 import type { FilterItem } from '../Tables/TableFilter';
 import type { ReactNode } from 'react';
@@ -8,6 +8,7 @@ export type InstitutionRow = {
   name: string;
   type: string;
   assetNum: number;
+  status: string;
 };
 
 export type InstitutionDetailsCardProps = {
@@ -30,6 +31,22 @@ const renderType = (type: string) => {
   if (type === 'broker') return '券商';
   if (type === 'other') return '其他';
   return type;
+};
+
+const renderStatus = (status: string) => {
+  const key = status.toLowerCase();
+  const meta: Record<string, { color: string; label: string }> = {
+    active: { color: '#2e7d32', label: '在用' },
+    inactive: { color: '#ed6c02', label: '停用' },
+    closed: { color: '#6e6e6e', label: '关闭' },
+  };
+  const info = meta[key] ?? { color: '#6e6e6e', label: status || '-' };
+  return (
+    <Stack direction="row" spacing={0.75} alignItems="center">
+      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: info.color }} />
+      <Typography variant="body2">{info.label}</Typography>
+    </Stack>
+  );
 };
 
 const InstitutionDetailsCard = (_props: InstitutionDetailsCardProps) => {
@@ -62,6 +79,11 @@ const InstitutionDetailsCard = (_props: InstitutionDetailsCardProps) => {
               label: '关联资产数',
               key: 'assetNum',
               render: (row) => <Typography>{row.assetNum}</Typography>,
+            },
+            {
+              label: '状态',
+              key: 'status',
+              render: (row) => renderStatus(row.status),
             },
             {
               label: '操作',

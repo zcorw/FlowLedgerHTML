@@ -1,4 +1,4 @@
-import { Button, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Grid, Stack, Typography } from '@mui/material';
 import { Table, Filter } from '../Tables';
 import type { FilterItem } from '../Tables/TableFilter';
 import type { ReactNode } from 'react';
@@ -10,6 +10,7 @@ export type AssetRow = {
   currency: string; // 币种
   balance: string; // 余额，已格式化
   updatedAt: string; // 更新时间
+  status: string; // 状态
 };
 
 export type AssetDetailsCardProps = {
@@ -25,6 +26,22 @@ export type AssetDetailsCardProps = {
   pageCount: number;
   onPageChange: (page: number) => void;
   chips?: ReactNode[];
+};
+
+const renderStatus = (status: string) => {
+  const key = status.toLowerCase();
+  const meta: Record<string, { color: string; label: string }> = {
+    active: { color: '#2e7d32', label: '在用' },
+    inactive: { color: '#ed6c02', label: '停用' },
+    closed: { color: '#6e6e6e', label: '关闭' },
+  };
+  const info = meta[key] ?? { color: '#6e6e6e', label: status || '-' };
+  return (
+    <Stack direction="row" spacing={0.75} alignItems="center">
+      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: info.color }} />
+      <Typography variant="body2">{info.label}</Typography>
+    </Stack>
+  );
 };
 
 const AssetDetailsCard = (_props: AssetDetailsCardProps) => {
@@ -44,14 +61,14 @@ const AssetDetailsCard = (_props: AssetDetailsCardProps) => {
           rows={_props.rows}
           columns={[
             {
-              label: '机构',
-              key: 'institution',
-              render: (row) => <Typography>{row.institution}</Typography>,
-            },
-            {
               label: '资产',
               key: 'account',
               render: (row) => <Typography>{row.account}</Typography>,
+            },
+            {
+              label: '机构',
+              key: 'institution',
+              render: (row) => <Typography>{row.institution}</Typography>,
             },
             {
               label: '币种',
@@ -64,9 +81,9 @@ const AssetDetailsCard = (_props: AssetDetailsCardProps) => {
               render: (row) => <Typography>{row.balance}</Typography>,
             },
             {
-              label: '更新时间',
-              key: 'updatedAt',
-              render: (row) => <Typography>{row.updatedAt}</Typography>,
+              label: '状态',
+              key: 'status',
+              render: (row) => renderStatus(row.status),
             },
             {
               label: '操作',
