@@ -1,6 +1,7 @@
 import { Box, Button, Grid, Stack, Typography } from '@mui/material';
 import { Table, Filter } from '../Tables';
 import type { FilterItem } from '../Tables/TableFilter';
+import StatusBadge from '../StatusBadge';
 import type { ReactNode } from 'react';
 
 export type InstitutionRow = {
@@ -20,6 +21,7 @@ export type InstitutionDetailsCardProps = {
   onView?: (row: InstitutionRow) => void;
   onEdit?: (row: InstitutionRow) => void;
   onDelete?: (row: InstitutionRow) => void;
+  onBulkUpdate?: (row: InstitutionRow) => void;
   page: number;
   pageCount: number;
   onPageChange: (page: number) => void;
@@ -31,22 +33,6 @@ const renderType = (type: string) => {
   if (type === 'broker') return '券商';
   if (type === 'other') return '其他';
   return type;
-};
-
-const renderStatus = (status: string) => {
-  const key = status.toLowerCase();
-  const meta: Record<string, { color: string; label: string }> = {
-    active: { color: '#2e7d32', label: '在用' },
-    inactive: { color: '#ed6c02', label: '停用' },
-    closed: { color: '#6e6e6e', label: '关闭' },
-  };
-  const info = meta[key] ?? { color: '#6e6e6e', label: status || '-' };
-  return (
-    <Stack direction="row" spacing={0.75} alignItems="center">
-      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: info.color }} />
-      <Typography variant="body2">{info.label}</Typography>
-    </Stack>
-  );
 };
 
 const InstitutionDetailsCard = (_props: InstitutionDetailsCardProps) => {
@@ -83,7 +69,7 @@ const InstitutionDetailsCard = (_props: InstitutionDetailsCardProps) => {
             {
               label: '状态',
               key: 'status',
-              render: (row) => renderStatus(row.status),
+              render: (row) => <StatusBadge status={row.status} />,
             },
             {
               label: '操作',
@@ -106,6 +92,15 @@ const InstitutionDetailsCard = (_props: InstitutionDetailsCardProps) => {
                       onClick={() => _props.onEdit && _props.onEdit(row)}
                     >
                       编辑
+                    </Button>
+                  )}
+                  {_props.onBulkUpdate && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => _props.onBulkUpdate && _props.onBulkUpdate(row)}
+                    >
+                      批量余额
                     </Button>
                   )}
                   {_props.onDelete && (

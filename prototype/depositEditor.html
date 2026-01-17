@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>批量更新余额 - 直接填写（Demo）</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.04);
+        --line: rgba(255, 255, 255, 0.10);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+        --muted2: rgba(255, 255, 255, 0.48);
+        --accent: #39d0c6;
+        --accent2: rgba(57, 208, 198, 0.22);
+        --danger: #ff6b6b;
+        --warn: #ffcc66;
+        --ok: #33d17a;
+
+        --radius-lg: 18px;
+        --radius-md: 14px;
+        --radius-sm: 12px;
+
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+        --shadow2: 0 8px 22px rgba(0, 0, 0, 0.38);
+
+        --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        color: var(--text);
+        background: radial-gradient(
+            1200px 520px at 16% 18%,
+            rgba(57, 208, 198, 0.14),
+            transparent 55%
+          ),
+          radial-gradient(
+            900px 420px at 80% 28%,
+            rgba(120, 160, 255, 0.10),
+            transparent 60%
+          ),
+          linear-gradient(180deg, #07101f 0%, #070d18 60%, #060a12 100%);
+      }
+
+      /* Page scaffold */
+      .app {
+        max-width: 1280px;
+        margin: 28px auto;
+        padding: 0 18px;
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow2);
+        overflow: hidden;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 18px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .card-title {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .subtle {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 4px;
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      /* Buttons */
+      .btn {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        padding: 9px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 650;
+        font-size: 13px;
+        line-height: 1;
+        transition: transform 0.08s ease, border-color 0.15s ease,
+          background 0.15s ease;
+      }
+      .btn:hover {
+        border-color: rgba(57, 208, 198, 0.55);
+        background: rgba(57, 208, 198, 0.10);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn-primary {
+        border-color: rgba(57, 208, 198, 0.55);
+        background: rgba(57, 208, 198, 0.12);
+      }
+      .btn-primary:hover {
+        background: rgba(57, 208, 198, 0.18);
+      }
+      .btn-ghost {
+        background: transparent;
+      }
+      .btn-danger {
+        border-color: rgba(255, 107, 107, 0.5);
+        background: rgba(255, 107, 107, 0.10);
+      }
+      .btn-danger:hover {
+        background: rgba(255, 107, 107, 0.16);
+      }
+      .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      /* Table */
+      .table-wrap {
+        padding: 0 10px 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        border-radius: 14px;
+      }
+      thead th {
+        text-align: left;
+        color: rgba(255, 255, 255, 0.66);
+        font-size: 12px;
+        font-weight: 650;
+        letter-spacing: 0.25px;
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      tbody td {
+        padding: 12px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        vertical-align: middle;
+      }
+      tbody tr:hover td {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .mono {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum" 1, "ss01" 1;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.82);
+      }
+      .badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--ok);
+        box-shadow: 0 0 0 4px rgba(51, 209, 122, 0.12);
+      }
+
+      /* Right panel (drawer demo always visible) */
+      .drawer {
+        position: sticky;
+        top: 18px;
+        height: calc(100vh - 36px);
+        overflow: hidden;
+      }
+      .drawer .card-header {
+        padding: 18px 18px 12px;
+      }
+      .drawer-body {
+        padding: 14px 18px 18px;
+        overflow: auto;
+        height: calc(100% - 64px);
+      }
+
+      /* Form controls */
+      .field {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .label-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      label {
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--muted2);
+      }
+      .control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease,
+          background 0.15s ease;
+      }
+      .control:focus-within {
+        border-color: rgba(57, 208, 198, 0.72);
+        box-shadow: 0 0 0 4px rgba(57, 208, 198, 0.14);
+        background: rgba(57, 208, 198, 0.06);
+      }
+
+      input[type="text"],
+      input[type="number"],
+      input[type="datetime-local"],
+      select {
+        width: 100%;
+        border: 0;
+        outline: 0;
+        color: var(--text);
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      input::placeholder {
+        color: rgba(255, 255, 255, 0.35);
+        font-weight: 550;
+      }
+
+      .seg {
+        display: inline-flex;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 999px;
+        padding: 4px;
+        gap: 4px;
+      }
+      .seg button {
+        border: 0;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.72);
+        padding: 8px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .seg button.active {
+        color: var(--text);
+        background: rgba(57, 208, 198, 0.16);
+        outline: 1px solid rgba(57, 208, 198, 0.45);
+      }
+
+      /* Editable grid in drawer */
+      .edit-grid {
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .edit-head,
+      .edit-row {
+        display: grid;
+        grid-template-columns: 1.45fr 0.65fr 0.95fr 1fr;
+        gap: 0;
+        align-items: center;
+      }
+      .edit-head {
+        background: rgba(255, 255, 255, 0.03);
+        color: rgba(255, 255, 255, 0.66);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .edit-row {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .edit-row:last-child {
+        border-bottom: 0;
+      }
+      .cell {
+        padding-right: 10px;
+        min-width: 0;
+      }
+      .asset-name {
+        font-weight: 750;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.92);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .asset-sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.55);
+      }
+      .delta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        font-weight: 750;
+        font-size: 13px;
+      }
+      .delta.up {
+        color: rgba(51, 209, 122, 0.95);
+      }
+      .delta.down {
+        color: rgba(255, 204, 102, 0.95);
+      }
+      .delta.zero {
+        color: rgba(255, 255, 255, 0.48);
+      }
+      .row-changed {
+        background: rgba(57, 208, 198, 0.06);
+      }
+      .row-error {
+        background: rgba(255, 107, 107, 0.07);
+      }
+
+      .mini {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      .footer-actions {
+        position: sticky;
+        bottom: 0;
+        margin-top: 14px;
+        padding-top: 12px;
+        background: linear-gradient(
+          180deg,
+          rgba(10, 16, 30, 0) 0%,
+          rgba(10, 16, 30, 0.92) 45%,
+          rgba(10, 16, 30, 1) 100%
+        );
+      }
+      .footer-actions .bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 16px;
+        padding: 10px 12px;
+      }
+      .summary {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .summary strong {
+        font-size: 13px;
+      }
+      .summary span {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.56);
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .chip b {
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      /* Responsive */
+      @media (max-width: 980px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+        .drawer {
+          position: relative;
+          top: 0;
+          height: auto;
+        }
+        .drawer-body {
+          height: auto;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <!-- Left: Asset list (context) -->
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">资产明细</div>
+            <div class="subtle">示例：按机构展示，可进入“批量更新余额”</div>
+          </div>
+          <div class="toolbar">
+            <span class="badge"><span class="badge-dot"></span> 已启用机构</span>
+            <button class="btn btn-primary" type="button">
+              批量更新余额（招商银行）
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20%">机构</th>
+                <th style="width: 20%">账户 / 资产</th>
+                <th style="width: 10%">币种</th>
+                <th style="width: 15%">余额</th>
+                <th style="width: 15%">折算（CNY）</th>
+                <th style="width: 12%">更新时间</th>
+                <th style="width: 8%">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>招商银行</td>
+                <td>储蓄账户</td>
+                <td class="mono">CNY</td>
+                <td class="mono">¥ 58,400</td>
+                <td class="mono">¥ 58,400</td>
+                <td class="mono">09-12 09:20</td>
+                <td><button class="btn btn-ghost">编辑</button></td>
+              </tr>
+              <tr>
+                <td>招商银行</td>
+                <td>定投 · 12 期</td>
+                <td class="mono">CNY</td>
+                <td class="mono">¥ 32,000</td>
+                <td class="mono">¥ 32,000</td>
+                <td class="mono">09-05 11:05</td>
+                <td><button class="btn btn-ghost">编辑</button></td>
+              </tr>
+              <tr>
+                <td>招商银行</td>
+                <td>Savings（外币）</td>
+                <td class="mono">USD</td>
+                <td class="mono">$ 4,820</td>
+                <td class="mono">¥ 34,600</td>
+                <td class="mono">09-10 21:10</td>
+                <td><button class="btn btn-ghost">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Right: Drawer (Batch update form) -->
+      <aside class="card drawer" aria-label="批量更新余额抽屉（Demo）">
+        <div class="card-header">
+          <div>
+            <div class="card-title">批量更新余额</div>
+            <div class="subtle">方式一：直接填写“新余额”，提交前可预览差额</div>
+          </div>
+          <div class="toolbar">
+            <button class="btn btn-ghost" type="button">关闭</button>
+          </div>
+        </div>
+
+        <div class="drawer-body">
+          <!-- Organization selector -->
+          <div class="field">
+            <div class="label-row">
+              <label for="inst">机构</label>
+              <span class="hint">可切换（示例）</span>
+            </div>
+            <div class="control">
+              <select id="inst">
+                <option selected>招商银行</option>
+                <option>建设银行</option>
+                <option>先锋证券</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Mode segmented -->
+          <div class="field">
+            <div class="label-row">
+              <label>更新方式</label>
+              <span class="hint">此 Demo 展示主方案样式</span>
+            </div>
+            <div class="seg" role="tablist" aria-label="更新方式切换">
+              <button class="active" type="button" role="tab" aria-selected="true">
+                直接填写余额
+              </button>
+              <button type="button" role="tab" aria-selected="false">
+                粘贴/导入
+              </button>
+              <button type="button" role="tab" aria-selected="false">
+                按差额调整
+              </button>
+            </div>
+          </div>
+
+          <!-- Unified as_of -->
+          <div class="field">
+            <div class="label-row">
+              <label for="asof">统一设置生效时间（as_of）</label>
+              <span class="hint">默认：当前时间</span>
+            </div>
+            <div class="control">
+              <input id="asof" type="datetime-local" value="2026-01-17T09:20" />
+            </div>
+            <div class="mini">
+              提示：单行可覆盖 as_of（本 Demo 为样式展示，未做交互逻辑）。
+            </div>
+          </div>
+
+          <!-- Editable grid -->
+          <div class="edit-grid" role="table" aria-label="可编辑资产表格（批量更新）">
+            <div class="edit-head" role="rowgroup">
+              <div class="cell" role="columnheader">资产</div>
+              <div class="cell" role="columnheader">币种</div>
+              <div class="cell" role="columnheader">新余额</div>
+              <div class="cell" role="columnheader">差额提示</div>
+            </div>
+
+            <!-- Row 1 -->
+            <div class="edit-row row-changed" role="row">
+              <div class="cell">
+                <div class="asset-name">储蓄账户</div>
+                <div class="asset-sub mono">当前：¥ 58,400</div>
+              </div>
+              <div class="cell mono">CNY</div>
+              <div class="cell">
+                <div class="control" style="padding: 8px 10px; border-radius: 12px">
+                  <input
+                    type="number"
+                    inputmode="decimal"
+                    placeholder="输入新余额"
+                    value="60000"
+                    aria-label="储蓄账户 新余额"
+                  />
+                </div>
+                <div class="mini">仅填数字，币种由资产决定</div>
+              </div>
+              <div class="cell">
+                <span class="delta up mono">+ 1,600</span>
+                <div class="mini">将生成一条新余额记录</div>
+              </div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="edit-row" role="row">
+              <div class="cell">
+                <div class="asset-name">定投 · 12 期</div>
+                <div class="asset-sub mono">当前：¥ 32,000</div>
+              </div>
+              <div class="cell mono">CNY</div>
+              <div class="cell">
+                <div class="control" style="padding: 8px 10px; border-radius: 12px">
+                  <input
+                    type="number"
+                    inputmode="decimal"
+                    placeholder="输入新余额"
+                    value=""
+                    aria-label="定投 新余额"
+                  />
+                </div>
+                <div class="mini">未修改则不会提交该行</div>
+              </div>
+              <div class="cell">
+                <span class="delta zero mono">—</span>
+                <div class="mini">无变更</div>
+              </div>
+            </div>
+
+            <!-- Row 3 (error example) -->
+            <div class="edit-row row-error" role="row">
+              <div class="cell">
+                <div class="asset-name">Savings（外币）</div>
+                <div class="asset-sub mono">当前：$ 4,820</div>
+              </div>
+              <div class="cell mono">USD</div>
+              <div class="cell">
+                <div class="control" style="padding: 8px 10px; border-radius: 12px">
+                  <input
+                    type="number"
+                    inputmode="decimal"
+                    placeholder="输入新余额"
+                    value="-10"
+                    aria-label="Savings 新余额"
+                  />
+                </div>
+                <div class="mini" style="color: rgba(255, 107, 107, 0.95)">
+                  校验示例：不允许负余额（可按业务放开）
+                </div>
+              </div>
+              <div class="cell">
+                <span class="delta down mono">—</span>
+                <div class="mini" style="color: rgba(255, 107, 107, 0.95)">
+                  请修正后再预览
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer actions -->
+          <div class="footer-actions">
+            <div class="bar">
+              <div class="summary">
+                <strong class="mono">变更：1 项</strong>
+                <span class="mono">折算(CNY)净变化：+ 1,600（示例）</span>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center">
+                <span class="chip"><b>as_of</b> <span class="mono">2026-01-17 09:20</span></span>
+                <button class="btn" type="button">预览变更</button>
+                <button class="btn btn-primary" type="button" disabled>
+                  提交更新
+                </button>
+              </div>
+            </div>
+            <div class="mini" style="margin-top: 10px">
+              说明：本 Demo 重点展示输入组件样式（焦点态、错误态、行高亮、差额提示等）。
+              “提交更新”在存在校验错误时应禁用。
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

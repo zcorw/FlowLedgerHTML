@@ -15,5 +15,25 @@ export const institutionSchema = z.object({
   type: z.enum(['bank','broker','other'], { message: '请选择机构类型' }),
 });
 
+// 批量资产余额表单校验
+export const balanceSchema = z
+  .object({
+    status: z.string(),
+    amount: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "active") {
+      const ok = /^\d+(\.\d{1,2})?$/.test(data.amount ?? "");
+      if (!ok) {
+        ctx.addIssue({
+          path: ["amount"],
+          code: "custom",
+          message: "请输入有效的金额",
+        });
+      }
+    }
+  });
+export const balanceListSchema = z.array(balanceSchema);
+
 export type DepositFormValues = z.infer<typeof depositSchema>;
 export type InstitutionFormValues = z.infer<typeof institutionSchema>;

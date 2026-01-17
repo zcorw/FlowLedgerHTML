@@ -1,5 +1,4 @@
 ﻿import { useEffect, useState } from "react";
-import type { ZodError } from "zod";
 import {
   Button,
   CircularProgress,
@@ -18,6 +17,8 @@ import { enqueueSnackbar } from '@/store/snackbar';
 import InstitutionSelect from "@/components/InstitutionSelect";
 import type { Institution, Product } from "@/api/deposits";
 import useCurrencyStore from "@/store/currency";
+import AssetFormFields from "./AssetFormFields";
+import { buildErrors } from "./dialogUtils";
 
 export type Mode = "asset" | "institution";
 
@@ -31,19 +32,6 @@ type Props = {
   onSubmit: (payload: DepositSubmitPayload) => Promise<Product | Institution>;
 };
 
-type AssetType = DepositFormValues["type"];
-type RiskLevel = DepositFormValues["riskLevel"];
-const assetTypes: readonly {value: AssetType, label: string}[] = [
-  { value: "deposit", label: "存款" },
-  { value: "investment", label: "投资" },
-  { value: "securities", label: "证券" },
-  { value: "other", label: "其他" },
-];
-const riskLevels: readonly { label: string; value: RiskLevel }[] = [
-  { label: "灵活型", value: "flexible" },
-  { label: "稳健型", value: "stable" },
-  { label: "高风险型", value: "high_risk" },
-];
 const institutionTypes: readonly { label: string; value: InstitutionFormValues["type"] }[] = [
   { label: "银行", value: "bank" },
   { label: "券商", value: "broker" },
@@ -57,17 +45,6 @@ const buildDefaultAssetForm = (): DepositFormValues => ({
   currency: "",
   riskLevel: depositSchema.shape.riskLevel.options[0],
 });
-
-const buildErrors = <T extends Record<string, unknown>>(error: ZodError) => {
-  const next: Partial<Record<keyof T, string>> = {};
-  for (const issue of error.issues) {
-    const pathKey = issue.path[0];
-    if (typeof pathKey === "string") {
-      next[pathKey as keyof T] = issue.message;
-    }
-  }
-  return next;
-};
 
 const DepositDialog = ({ open, onClose, onSubmit }: Props) => {
   const [mode, setMode] = useState<Mode>("asset");
@@ -181,70 +158,21 @@ const DepositDialog = ({ open, onClose, onSubmit }: Props) => {
 
           {mode === "asset" ? (
             <Stack spacing={2}>
-              <TextField
-                label="资产名称"
-                value={assetForm.name}
-                onChange={(e) => handleAssetChange("name", e.target.value)}
-                fullWidth
-                required
-                error={!!assetErrors.name}
-                helperText={assetErrors.name}
+              <AssetFormFields
+                form={assetForm}
+                errors={assetErrors}
+                currencyOptions={currencyOptions}
+                onChange={handleAssetChange}
+                afterType={
+                  <InstitutionSelect
+                    value={assetForm.institutionId || null}
+                    onChange={(id) => handleAssetChange("institutionId", id)}
+                    required
+                    error={!!assetErrors.institutionId}
+                    helperText={assetErrors.institutionId}
+                  />
+                }
               />
-              <TextField
-                label="资产类型"
-                select
-                value={assetForm.type}
-                onChange={(e) => handleAssetChange("type", e.target.value)}
-                fullWidth
-                required
-                error={!!assetErrors.type}
-                helperText={assetErrors.type}
-              >
-                {assetTypes.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <InstitutionSelect
-                value={assetForm.institutionId || null}
-                onChange={(id) => handleAssetChange("institutionId", id)}
-                required
-                error={!!assetErrors.institutionId}
-                helperText={assetErrors.institutionId}
-              />
-              <TextField
-                label="币种"
-                select
-                value={assetForm.currency}
-                onChange={(e) => handleAssetChange("currency", e.target.value)}
-                fullWidth
-                required
-                error={!!assetErrors.currency}
-                helperText={assetErrors.currency}
-              >
-                {currencyOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                label="风险等级"
-                select
-                value={assetForm.riskLevel}
-                onChange={(e) => handleAssetChange("riskLevel", e.target.value)}
-                fullWidth
-                required
-                error={!!assetErrors.riskLevel}
-                helperText={assetErrors.riskLevel}
-              >
-                {riskLevels.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
             </Stack>
           ) : (
             <Stack spacing={2}>

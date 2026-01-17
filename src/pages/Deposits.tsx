@@ -7,11 +7,13 @@ import DepositDialog, { type DepositSubmitPayload } from "@/components/Dialogs/D
 import {
   createInstitution,
   createProduct,
+  createBalance,
   importDeposit,
   listInstitutions,
   listProducts,
   deleteInstitution,
   deleteProduct,
+  createLatestBalance,
   type Institution,
   type InstitutionType,
   type ListInstitutionsParams,
@@ -19,6 +21,7 @@ import {
   type Product,
   type ProductCreate,
   type ProductType,
+  type LatestBalanceBatchParams,
 } from "@/api/deposits";
 import TabButtons from "@/components/TabButtons";
 import type { AssetRow } from "@/components/Cards/AssetDetailsCard";
@@ -27,6 +30,7 @@ import type { InstitutionRow } from "@/components/Cards/InstitutionDetailsCard";
 import useCurrencyStore, { selectCurrencies } from "@/store/currency";
 import { enqueueSnackbar } from "@/store/snackbar";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import BalanceBulkDrawer, { type BalanceBulkDrawerProps } from "@/components/BalanceBulkDrawer";
 
 const tabs = [
   { label: "资产", value: "asset" },
@@ -108,6 +112,13 @@ const DepositsPage = () => {
     name?: string;
   }>({ open: false, type: "asset" });
   const [deleting, setDeleting] = useState(false);
+  const [bulkDrawer, setBulkDrawer] = useState<{
+    open: boolean;
+    institutionId?: number;
+    institutionName?: string;
+  }>({
+    open: false,
+  });
 
   const currencyMap = useCurrencyStore(selectCurrencies);
 
@@ -117,7 +128,7 @@ const DepositsPage = () => {
       label: "币种",
       type: "menu",
       options: [
-        { label: "全部", value: "all" }, 
+        { label: "全部", value: "all" },
         ...currencyMap.map((currency) => ({ label: currency.code, value: currency.code })),
       ],
     };
@@ -201,6 +212,38 @@ const DepositsPage = () => {
     } finally {
       setImporting(false);
       event.target.value = "";
+    }
+  };
+
+  const handleBulkClose = () => {
+    setBulkDrawer({ open: false, institutionId: undefined, institutionName: undefined });
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const handleBulkOpenInstitution = async (row: InstitutionRow) => {
+    // 先打开抽屉，随后加载 active 资产
+    setBulkDrawer({
+      open: true,
+      institutionId: Number(row.id),
+      institutionName: row.name,
+    });
+  };
+
+  const handleBulkSubmit: BalanceBulkDrawerProps["onSubmit"] = async (balances) => {
+    const payload: LatestBalanceBatchParams = {
+      items: balances.map((balance) => ({
+        product_id: balance.productId,
+        amount: balance.amount,
+        as_of: new Date().toISOString(),
+      }))
+    };
+    try {
+      const result = await createLatestBalance(Number(bulkDrawer.institutionId), payload);
+      enqueueSnackbar(`共${result.total}条数据，${result.created}条新增，${result.failed}条失败`, { severity: "success" });
+      handleBulkClose();
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error?.message || "更新失败，请稍后重试";
+      enqueueSnackbar(message, { severity: "error" });
     }
   };
 
@@ -389,6 +432,7 @@ const DepositsPage = () => {
               filters={institutionFilterItems}
               selectedFilters={institutionFilter}
               onFilterChange={onInstitutionFilterChange}
+              onBulkUpdate={handleBulkOpenInstitution}
               onDelete={requestDeleteInstitution}
               rows={institutionRows}
               page={institutionPage}
@@ -407,6 +451,13 @@ const DepositsPage = () => {
           onConfirm={handleConfirmDelete}
           confirmText="确认删除"
           loading={deleting}
+        />
+        <BalanceBulkDrawer
+          open={bulkDrawer.open}
+          onClose={handleBulkClose}
+          onSubmit={handleBulkSubmit}
+          institutionName={bulkDrawer.institutionName}
+          institutionId={bulkDrawer.institutionId}
         />
       </Stack>
     </Box>

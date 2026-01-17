@@ -144,6 +144,35 @@ export type ListProductBalancesParams = PaginationParams & {
   to?: string; // ISO date-time
 };
 
+export type ProductStatusParmas = {
+  status: ProductStatus;
+}
+
+export type LatestBalanceItem = {
+  product_id: number;
+  amount: string;
+  as_of: string;
+}
+
+export type LatestBalanceBatchParams = {
+  items: LatestBalanceItem[]
+};
+
+export type LatestBalanceResult = {
+  product_id: number;
+  as_of: string;
+  status: "created" | "updated" | "failed";
+  error?: string;
+}
+
+export type LatestBalanceBatchResult = {
+  total: number;
+  created: number;
+  updated: number;
+  failed: number;
+  items: LatestBalanceResult[];
+}
+
 /**
  * 机构列表（分页，可按类型过滤）
  */
@@ -203,6 +232,13 @@ export async function updateProduct(id: number, payload: ProductPatch) {
 }
 
 /**
+ * 更新产品状态
+ */
+export async function updateProductStatus(id: number, payload: ProductStatusParmas) {
+  return patch<Product>(`/products/${id}/status`, payload);
+}
+
+/**
  * 删除产品（默认软删除，hard=true 时硬删除）。
  * Header X-Confirm-Delete 必填：软删传 YES，硬删传 HARD-YES。
  */
@@ -236,4 +272,11 @@ export async function importDeposit(file: File | Blob) {
   const formData = new FormData();
   formData.append('file', file);
   return post<ImportDepositResponse>('/import/deposit', formData);
+}
+
+/**
+ * 批量写入最新产品余额快照
+ */
+export async function createLatestBalance(institution_id: number, payload: LatestBalanceBatchParams) {
+  return post<LatestBalanceBatchResult>(`/institutions/${institution_id}/products/balances/latest`, payload);
 }
