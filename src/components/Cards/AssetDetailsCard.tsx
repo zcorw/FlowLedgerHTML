@@ -1,11 +1,11 @@
-import { Box, Button, Grid, Stack, Typography } from '@mui/material';
-import { Table, Filter } from '../Tables';
-import type { FilterItem } from '../Tables/TableFilter';
-import StatusBadge from '../StatusBadge';
-import type { ReactNode } from 'react';
+﻿import { Button, Grid, Stack, Typography } from "@mui/material";
+import { Table, Filter } from "../Tables";
+import type { FilterItem } from "../Tables/TableFilter";
+import StatusBadge from "../StatusBadge";
+import type { ReactNode } from "react";
 
 export type AssetRow = {
-  id: string;
+  id: number;
   institution: string; // 机构
   account: string; // 账户/资产
   currency: string; // 币种
@@ -23,6 +23,7 @@ export type AssetDetailsCardProps = {
   onView?: (row: AssetRow) => void;
   onEdit?: (row: AssetRow) => void;
   onDelete?: (row: AssetRow) => void;
+  onSnapshot?: (row: AssetRow) => void;
   page: number;
   pageCount: number;
   onPageChange: (page: number) => void;
@@ -46,35 +47,44 @@ const AssetDetailsCard = (_props: AssetDetailsCardProps) => {
           rows={_props.rows}
           columns={[
             {
-              label: '资产',
-              key: 'account',
+              label: "资产",
+              key: "account",
               render: (row) => <Typography>{row.account}</Typography>,
             },
             {
-              label: '机构',
-              key: 'institution',
+              label: "机构",
+              key: "institution",
               render: (row) => <Typography>{row.institution}</Typography>,
             },
             {
-              label: '币种',
-              key: 'currency',
+              label: "币种",
+              key: "currency",
               render: (row) => <Typography>{row.currency}</Typography>,
             },
             {
-              label: '余额',
-              key: 'balance',
+              label: "余额",
+              key: "balance",
               render: (row) => <Typography>{row.balance}</Typography>,
             },
             {
-              label: '状态',
-              key: 'status',
+              label: "状态",
+              key: "status",
               render: (row) => <StatusBadge status={row.status} />,
             },
             {
-              label: '操作',
-              key: 'actions',
+              label: "操作",
+              key: "actions",
               render: (row) => (
                 <Stack direction="row" spacing={1}>
+                  {_props.onSnapshot && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => _props.onSnapshot && _props.onSnapshot(row)}
+                    >
+                      历史余额
+                    </Button>
+                  )}
                   {_props.onView && (
                     <Button
                       variant="outlined"

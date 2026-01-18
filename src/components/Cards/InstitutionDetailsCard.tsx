@@ -5,7 +5,7 @@ import StatusBadge from '../StatusBadge';
 import type { ReactNode } from 'react';
 
 export type InstitutionRow = {
-  id: string;
+  id: number;
   name: string;
   type: string;
   assetNum: number;

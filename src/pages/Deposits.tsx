@@ -31,6 +31,7 @@ import useCurrencyStore, { selectCurrencies } from "@/store/currency";
 import { enqueueSnackbar } from "@/store/snackbar";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import BalanceBulkDrawer, { type BalanceBulkDrawerProps } from "@/components/BalanceBulkDrawer";
+import AssetBalanceSnapshotDrawer from "@/components/Drawers/AssetBalanceSnapshotDrawer";
 
 const tabs = [
   { label: "资产", value: "asset" },
@@ -108,7 +109,7 @@ const DepositsPage = () => {
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
     type: "asset" | "institution";
-    id?: string;
+    id?: number;
     name?: string;
   }>({ open: false, type: "asset" });
   const [deleting, setDeleting] = useState(false);
@@ -119,6 +120,10 @@ const DepositsPage = () => {
   }>({
     open: false,
   });
+  const [snapshotDrawer, setSnapshotDrawer] = useState<{
+    open: boolean;
+    asset?: AssetRow;
+  }>({ open: false });
 
   const currencyMap = useCurrencyStore(selectCurrencies);
 
@@ -229,6 +234,17 @@ const DepositsPage = () => {
     });
   };
 
+  const handleOpenSnapshot = (row: AssetRow) => {
+    setSnapshotDrawer({ open: true, asset: row });
+  };
+
+  const handleCloseSnapshot = (hasChanges: boolean) => {
+    setSnapshotDrawer({ open: false, asset: undefined });
+    if (hasChanges) {
+      setRefreshKey((prev) => prev + 1);
+    }
+  };
+
   const handleBulkSubmit: BalanceBulkDrawerProps["onSubmit"] = async (balances) => {
     const payload: LatestBalanceBatchParams = {
       items: balances.map((balance) => ({
@@ -306,7 +322,7 @@ const DepositsPage = () => {
           return product.name.toLowerCase().includes(keyword);
         })
         .map((product: Product) => ({
-          id: product.id.toString(),
+          id: product.id,
           institution: product.institution_name,
           account: product.name,
           currency: product.currency,
@@ -346,7 +362,7 @@ const DepositsPage = () => {
       const res = await listInstitutions(params);
 
       const mapped = res.data.map((inst: Institution) => ({
-        id: inst.id.toString(),
+        id: inst.id,
         name: inst.name,
         type: inst.type,
         assetNum: inst.product_number,
@@ -420,6 +436,7 @@ const DepositsPage = () => {
               selectedFilters={tableFilter}
               onFilterChange={onFilterChange}
               onDelete={requestDeleteAsset}
+              onSnapshot={handleOpenSnapshot}
               rows={rows}
               page={page}
               pageCount={pageCount}
@@ -458,6 +475,11 @@ const DepositsPage = () => {
           onSubmit={handleBulkSubmit}
           institutionName={bulkDrawer.institutionName}
           institutionId={bulkDrawer.institutionId}
+        />
+        <AssetBalanceSnapshotDrawer
+          open={snapshotDrawer.open}
+          onClose={handleCloseSnapshot}
+          asset={snapshotDrawer.asset}
         />
       </Stack>
     </Box>

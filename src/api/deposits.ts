@@ -121,6 +121,8 @@ export type BalanceCreate = {
   as_of: string; // ISO date-time
 };
 
+export type BalancePatch = Partial<BalanceCreate>;
+
 export type PaginationParams = {
   page?: number;
   page_size?: number;
@@ -262,6 +264,20 @@ export async function listProductBalances(productId: number, params?: ListProduc
  */
 export async function createBalance(productId: number, payload: BalanceCreate) {
   return post<Balance>(`/products/${productId}/balances`, payload);
+}
+
+/**
+ * 更新产品余额快照
+ */
+export async function updateBalance(productId: number, balanceId: number, payload: BalancePatch) {
+  return patch<Balance>(`/products/${productId}/balances/${balanceId}`, payload);
+}
+
+/**
+ * 删除产品余额快照
+ */
+export async function deleteBalance(productId: number, balanceId: number) {
+  return del<Balance>(`/products/${productId}/balances/${balanceId}`);
 }
 
 /**
