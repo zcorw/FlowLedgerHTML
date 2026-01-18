@@ -84,6 +84,22 @@ export type ListExchangeRatesParams = {
   date?: string; // ISO date
 };
 
+export type ImportExchangeRateResult = {
+  base: string;
+  quote: string;
+  rate_date: string;
+  status: string;
+  error?: string;
+}
+
+export type ImportExchangeRateResponse = {
+  total: number;
+  created: number;
+  updated: number;
+  failed: number;
+  items: ImportExchangeRateResult[];
+}
+
 /**
  * List currencies with pagination and optional filters.
  * GET /currencies
@@ -156,4 +172,15 @@ export async function convertCurrency(payload: ConvertRequest, idempotencyKey?: 
   return post<ConvertResponse>('/convert', payload, {
     headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined,
   });
+}
+
+/**
+ * Import exchange rates.
+ * POST /import/exchange-rates
+ * Response: generic object (API returns arbitrary fields)
+ */
+export async function importRates(file: File | Blob) {
+  const formData = new FormData();
+  formData.append('file', file);
+  return post<ImportExchangeRateResponse>('/import/exchange-rates', formData);
 }

@@ -175,6 +175,21 @@ export type LatestBalanceBatchResult = {
   items: LatestBalanceResult[];
 }
 
+export type MonthlyAssetPoint = {
+  month: string;
+  amount: number;
+}
+
+export type MonthlyAssetResult = {
+  currency: string;
+  data: MonthlyAssetPoint[];
+}
+
+export type MonthlyAssetParams = {
+  from_dt: string;
+  to_dt: string;
+}
+
 /**
  * 机构列表（分页，可按类型过滤）
  */
@@ -295,4 +310,11 @@ export async function importDeposit(file: File | Blob) {
  */
 export async function createLatestBalance(institution_id: number, payload: LatestBalanceBatchParams) {
   return post<LatestBalanceBatchResult>(`/institutions/${institution_id}/products/balances/latest`, payload);
+}
+
+/**
+ * 查询账号每月存款列表（支持时间范围）
+ */
+export async function getMonthlyAsset(params: MonthlyAssetParams) {
+  return get<MonthlyAssetResult>(`/assets/monthly`, { params });
 }
