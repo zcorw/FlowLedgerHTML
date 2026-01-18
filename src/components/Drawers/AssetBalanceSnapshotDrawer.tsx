@@ -6,6 +6,7 @@ import {
   Divider,
   Drawer,
   IconButton,
+  Pagination,
   Stack,
   Table,
   TableBody,
@@ -48,6 +49,8 @@ type Props = {
   asset?: AssetRow;
 };
 
+const pageSize = 10;
+
 const normalizeSnapshots = (rows: SnapshotRow[], limit: number) => {
   return [...rows]
     .sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf())
@@ -62,10 +65,15 @@ const mapBalanceToRow = (balance: Balance): SnapshotRow => ({
 
 const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
   const [rows, setRows] = useState<SnapshotRow[]>([]);
+  const [allRows, setAllRows] = useState<SnapshotRow[]>([]);
+  const [allPage, setAllPage] = useState(1);
+  const [allPageCount, setAllPageCount] = useState(1);
+  const [showAll, setShowAll] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<SnapshotRow | null>(null);
   const [isNewDraft, setIsNewDraft] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [deleteState, setDeleteState] = useState<{
     open: boolean;
     row?: SnapshotRow;
@@ -73,13 +81,36 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
   }>({ open: false, loading: false });
   const [hasChanges, setHasChanges] = useState(false);
 
+  const loadLatest = async () => {
+    if (!asset?.id) return;
+    const res = await listProductBalances(asset.id, { page: 1, page_size: 6 });
+    const mapped = res.data.map(mapBalanceToRow);
+    setRows(normalizeSnapshots(mapped, 6));
+  };
+
+  const loadAllPage = async (page: number) => {
+    if (!asset?.id) return;
+    setIsLoadingAll(true);
+    try {
+      const res = await listProductBalances(asset.id, { page, page_size: pageSize });
+      const mapped = res.data.map(mapBalanceToRow);
+      setAllRows(mapped);
+      const total = res.total ?? mapped.length;
+      setAllPageCount(Math.max(1, Math.ceil(total / pageSize)));
+    } catch (error) {
+      enqueueSnackbar((error as Error).message || "获取余额快照失败", { severity: "error" });
+      setAllRows([]);
+      setAllPageCount(1);
+    } finally {
+      setIsLoadingAll(false);
+    }
+  };
+
   useEffect(() => {
     if (!open || !asset?.id) return;
     const loadSnapshots = async () => {
       try {
-        const res = await listProductBalances(asset.id, { page: 1, page_size: 6 });
-        const mapped = res.data.map(mapBalanceToRow);
-        setRows(normalizeSnapshots(mapped, 6));
+        await loadLatest();
       } catch (error) {
         enqueueSnackbar((error as Error).message || "获取余额快照失败", { severity: "error" });
         setRows([]);
@@ -90,6 +121,10 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
         setIsSaving(false);
         setDeleteState({ open: false, row: undefined, loading: false });
         setHasChanges(false);
+        setShowAll(false);
+        setAllRows([]);
+        setAllPage(1);
+        setAllPageCount(1);
       }
     };
     loadSnapshots();
@@ -121,6 +156,13 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
     setIsNewDraft(false);
   };
 
+  const refreshTables = async () => {
+    await loadLatest();
+    if (showAll) {
+      await loadAllPage(allPage);
+    }
+  };
+
   const handleSave = async () => {
     if (!draft || !asset?.id || isSaving) return;
     setIsSaving(true);
@@ -130,14 +172,11 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
         as_of: dayjs(draft.date).toISOString(),
       };
       if (isNewDraft) {
-        const res = await createBalance(asset.id, payload);
-        const newRow = mapBalanceToRow(res);
-        setRows((prev) => normalizeSnapshots([newRow, ...prev], 6));
+        await createBalance(asset.id, payload);
       } else {
-        const res = await updateBalance(asset.id, draft.id, payload);
-        const updated = mapBalanceToRow(res);
-        setRows((prev) => normalizeSnapshots(prev.map((row) => (row.id === updated.id ? updated : row)), 6));
+        await updateBalance(asset.id, draft.id, payload);
       }
+      await refreshTables();
       setHasChanges(true);
       setEditingId(null);
       setDraft(null);
@@ -164,7 +203,7 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
     setDeleteState((prev) => ({ ...prev, loading: true }));
     try {
       await deleteBalance(asset.id, deleteState.row.id);
-      setRows((prev) => prev.filter((row) => row.id !== deleteState.row?.id));
+      await refreshTables();
       if (editingId === deleteState.row.id) {
         setEditingId(null);
         setDraft(null);
@@ -178,12 +217,38 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
     }
   };
 
-  const tableRows = useMemo(() => {
-    if (draft && isNewDraft) {
-      return normalizeSnapshots([draft, ...rows], 5);
+  const handleToggleAll = async () => {
+    if (!showAll) {
+      setShowAll(true);
+      setAllPage(1);
+      await loadAllPage(1);
+      return;
     }
-    return normalizeSnapshots(rows, 5);
-  }, [draft, isNewDraft, rows]);
+    setShowAll(false);
+    setEditingId(null);
+    setDraft(null);
+    setIsNewDraft(false);
+  };
+
+  const handleAllPageChange = async (page: number) => {
+    setAllPage(page);
+    await loadAllPage(page);
+  };
+
+  const currentRows = showAll ? allRows : rows;
+
+  const tableRows = useMemo(() => {
+    if (!showAll) {
+      if (draft && isNewDraft) {
+        return normalizeSnapshots([draft, ...currentRows], 5);
+      }
+      return normalizeSnapshots(currentRows, 5);
+    }
+    if (draft && isNewDraft) {
+      return [draft, ...currentRows];
+    }
+    return currentRows;
+  }, [currentRows, draft, isNewDraft, showAll]);
 
   const chartData = useMemo(() => {
     return normalizeSnapshots(rows, 6)
@@ -213,7 +278,9 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
 
         <Stack spacing={1.5}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="subtitle1">最新 5 条余额快照</Typography>
+            <Typography variant="subtitle1">
+              {showAll ? "历史余额快照" : "最新 5 条余额快照"}
+            </Typography>
             <Button variant="contained" onClick={handleAdd} disabled={isSaving || deleteState.loading}>
               新增快照
             </Button>
@@ -296,7 +363,7 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
                   <TableRow>
                     <TableCell colSpan={3}>
                       <Typography variant="body2" color="text.secondary">
-                        暂无余额快照
+                        {isLoadingAll ? "加载中..." : "暂无余额快照"}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -304,24 +371,42 @@ const AssetBalanceSnapshotDrawer = ({ open, onClose, asset }: Props) => {
               </TableBody>
             </Table>
           </Box>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Button variant="text" onClick={handleToggleAll} disabled={isSaving || deleteState.loading}>
+              {showAll ? "收起" : "查看全部"}
+            </Button>
+            {showAll && (
+              <Pagination
+                color="primary"
+                page={allPage}
+                count={allPageCount}
+                onChange={(_event, value) => handleAllPageChange(value)}
+                size="small"
+              />
+            )}
+          </Stack>
         </Stack>
 
-        <Divider sx={{ my: 1 }} />
+        {!showAll && (
+          <>
+            <Divider sx={{ my: 1 }} />
 
-        <Stack spacing={1} sx={{ flex: 1 }}>
-          <Typography variant="subtitle1">近半年余额变化</Typography>
-          <Box sx={{ flex: 1, minHeight: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [value, "余额"]} />
-                <Line type="monotone" dataKey="amount" stroke="#1976d2" activeDot={{ r: 5 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </Box>
-        </Stack>
+            <Stack spacing={1} sx={{ flex: 1 }}>
+              <Typography variant="subtitle1">近半年余额变化</Typography>
+              <Box sx={{ flex: 1, minHeight: 220 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [value, "余额"]} />
+                    <Line type="monotone" dataKey="amount" stroke="#1976d2" activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+            </Stack>
+          </>
+        )}
       </Box>
       <ConfirmDialog
         open={deleteState.open}
