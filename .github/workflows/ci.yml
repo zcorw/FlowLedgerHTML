@@ -24,8 +24,7 @@ jobs:
 
       - name: Install deps
         run: |
-          npm config set optional true
-          npm install --include=optional
+          npm ci --include=optional
 
       - name: Build
         run: npm run build
