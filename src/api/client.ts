@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+﻿import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 const TOKEN_KEY = 'flow-ledger_access_token';
 
@@ -22,7 +22,7 @@ const http = axios.create({
   timeout: 10000,
 });
 
-// 将 token 注入请求头
+// Inject token into request headers.
 http.interceptors.request.use((config) => {
   const token = tokenStorage.get();
   if (token) {
@@ -32,18 +32,24 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
-// 简单的响应拦截：统一返回 data，错误向上抛出
+// Return data directly; propagate errors to callers.
 http.interceptors.response.use(
   (response: AxiosResponse) => response.data,
-  (error: AxiosError<{ error?: { code?: string; message?: string } }>) => {
+  (error: AxiosError<{ error?: { code?: string; message?: string }, detail?: string }>) => {
     const status = error.response?.status;
-    const code = error.response?.data?.error?.code;
+    const code = error.response?.data?.detail;
+    console.log(status, error.response);
     if (
       status === 401 &&
       (code === 'invalid_token_signature' || code === 'token_expired' || code === 'unauthorized')
     ) {
       tokenStorage.clear();
-      // 这里不做跳转，仅清理本地 token，交由上层处理
+      if (typeof window !== 'undefined') {
+        const { pathname } = window.location;
+        if (pathname !== '/login' && pathname !== '/register') {
+          window.location.href = '/login';
+        }
+      }
     }
     return Promise.reject(error);
   }
