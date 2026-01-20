@@ -1,0 +1,56 @@
+name: Build & Deploy (rsync)
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  APP_ROOT: ${{ secrets.APP_DIR }}
+  SSH_PORT: ${{ secrets.SSH_PORT }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup SSH
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$SSH_PORT" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Rsync dist to incoming
+        run: |
+          rsync -az --delete \
+            -e "ssh -p $SSH_PORT -i ~/.ssh/id_ed25519" \
+            dist/ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:"$APP_ROOT/.incoming/"
+
+      - name: Activate release
+        run: |
+          ssh -p "$SSH_PORT" -i ~/.ssh/id_ed25519 \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            'set -e
+             TS=$(date +%Y%m%d%H%M%S)
+             RELEASE_DIR="$APP_ROOT/releases/$TS"
+             mkdir -p "$RELEASE_DIR"
+             rsync -a --delete "$APP_ROOT/.incoming/" "$RELEASE_DIR/"
+             ln -sfn "$RELEASE_DIR" "$APP_ROOT/html"
+            '
