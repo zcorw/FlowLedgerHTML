@@ -116,6 +116,55 @@ export type ImportDepositResponse = {
   balance_items: ImportBalanceResult[];
 };
 
+export type ImportTaskCreateResponse = {
+  task_id: string;
+};
+
+export type ImportTaskStatus<T = unknown> = {
+  task_id: string;
+  kind: string;
+  status: 'queued' | 'processing' | 'succeeded' | 'failed';
+  progress: number;
+  stage?: string | null;
+  filename?: string | null;
+  size?: number | null;
+  result?: T | null;
+  error?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+const IMPORT_POLL_INTERVAL_MS = 1500;
+const IMPORT_POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function pollImportTask<T>(
+  taskId: string,
+  fetchStatus: (id: string) => Promise<ImportTaskStatus<T>>,
+) {
+  const startedAt = Date.now();
+  let latest: ImportTaskStatus<T> | null = null;
+
+  while (Date.now() - startedAt < IMPORT_POLL_TIMEOUT_MS) {
+    latest = await fetchStatus(taskId);
+    if (latest.status === 'succeeded') {
+      return latest;
+    }
+    if (latest.status === 'failed') {
+      const errorMessage = latest.error || '导入失败，请稍后重试';
+      const error = new Error(errorMessage);
+      (error as { taskStatus?: ImportTaskStatus<T> }).taskStatus = latest;
+      throw error;
+    }
+    await sleep(IMPORT_POLL_INTERVAL_MS);
+  }
+
+  const timeoutError = new Error('导入超时，请稍后刷新查看结果');
+  (timeoutError as { taskStatus?: ImportTaskStatus<T> }).taskStatus = latest ?? undefined;
+  throw timeoutError;
+}
+
 export type BalanceCreate = {
   amount: string;
   as_of: string; // ISO date-time
@@ -302,7 +351,14 @@ export async function deleteBalance(productId: number, balanceId: number) {
 export async function importDeposit(file: File | Blob) {
   const formData = new FormData();
   formData.append('file', file);
-  return post<ImportDepositResponse>('/import/deposit', formData);
+  const { task_id } = await post<ImportTaskCreateResponse>('/import/deposit', formData);
+  const status = await pollImportTask<ImportDepositResponse>(task_id, (id) =>
+    get<ImportTaskStatus<ImportDepositResponse>>(`/import/deposit/tasks/${id}`),
+  );
+  if (!status.result) {
+    throw new Error('导入完成但未返回结果');
+  }
+  return status.result;
 }
 
 /**
