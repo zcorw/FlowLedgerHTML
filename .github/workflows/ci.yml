@@ -40,6 +40,10 @@ jobs:
 
       - name: Rsync dist to incoming
         run: |
+          if [ -z "$APP_ROOT" ]; then
+            echo "APP_ROOT is empty. Check secrets.APP_DIR."
+            exit 1
+          fi
           rsync -az --delete \
             -e "ssh -p $SSH_PORT -i ~/.ssh/id_ed25519" \
             dist/ \
@@ -49,10 +53,11 @@ jobs:
         run: |
           ssh -p "$SSH_PORT" -i ~/.ssh/id_ed25519 \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            'set -e
-             TS=$(date +%Y%m%d%H%M%S)
-             RELEASE_DIR="$APP_ROOT/releases/$TS"
-             mkdir -p "$RELEASE_DIR"
-             rsync -a --delete "$APP_ROOT/.incoming/" "$RELEASE_DIR/"
-             ln -sfn "$RELEASE_DIR" "$APP_ROOT/html"
-            '
+            "APP_ROOT='${APP_ROOT}' bash -s" <<'EOF'
+          set -e
+          TS=$(date +%Y%m%d%H%M%S)
+          RELEASE_DIR="$APP_ROOT/releases/$TS"
+          mkdir -p "$RELEASE_DIR"
+          rsync -a --delete "$APP_ROOT/.incoming/" "$RELEASE_DIR/"
+          ln -sfn "$RELEASE_DIR" "$APP_ROOT/html"
+          EOF
