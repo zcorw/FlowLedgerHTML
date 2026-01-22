@@ -18,7 +18,7 @@ import {
   InputAdornment,
   IconButton,
 } from "@mui/material";
-import { meta as statusMeta } from "./StatusBadge";
+import { meta as statusMeta } from "../StatusBadge";
 import { createProduct, listProducts, ProductStatus, updateProductStatus, type Product, type ProductCreate } from "@/api/deposits";
 import { useEffect } from "react";
 import { balanceListSchema, balanceSchema } from "@/validation/deposit";
@@ -82,7 +82,7 @@ const BalanceBulkDrawer = ({
     try {
       setLoading(true);
       await onSubmit(
-        row.map((r) => ({
+        row.filter((r) => r.status === "active").map((r) => ({
           productId: r.id,
           amount: r.amount,
         }))
@@ -201,6 +201,7 @@ const BalanceBulkDrawer = ({
               value={r.amount}
               onChange={(e) => setAmount(i, e.target.value)}
               variant="standard"
+              disabled={r.status === "inactive"}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

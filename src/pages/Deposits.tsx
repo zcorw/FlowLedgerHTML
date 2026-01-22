@@ -30,7 +30,7 @@ import type { InstitutionRow } from "@/components/Cards/InstitutionDetailsCard";
 import useCurrencyStore, { selectCurrencies } from "@/store/currency";
 import { enqueueSnackbar } from "@/store/snackbar";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import BalanceBulkDrawer, { type BalanceBulkDrawerProps } from "@/components/BalanceBulkDrawer";
+import BalanceBulkDrawer, { type BalanceBulkDrawerProps } from "@/components/Drawers/BalanceBulkDrawer";
 import AssetBalanceSnapshotDrawer from "@/components/Drawers/AssetBalanceSnapshotDrawer";
 
 const tabs = [
