@@ -14,7 +14,15 @@ dist-ssr
 
 # caches and build info
 .npm
-.yarn
+.yarn/*
+!.yarn/releases
+!.yarn/releases/**
+!.yarn/plugins
+!.yarn/plugins/**
+!.yarn/sdks
+!.yarn/sdks/**
+!.yarn/versions
+!.yarn/versions/**
 .cache
 .vite
 *.tsbuildinfo
