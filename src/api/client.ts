@@ -18,7 +18,7 @@ export const tokenStorage = {
 };
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
+  baseURL: '/v1',
 });
 
 // Inject token into request headers.
