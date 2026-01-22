@@ -95,13 +95,16 @@ const BalanceBulkDrawer = ({
   const fetchRows = async () => {
     if (!institutionId) return;
     const res = await listProducts({ institution_id: institutionId });
-    setRows(res.data.map((prod: Product) => ({
-      id: prod.id,
-      name: prod.name,
-      amount: '',
-      currency: prod.currency,
-      status: prod.status,
-    })));
+    setRows(res.data.map((prod: Product) => {
+      const r = row.find((r) => r.id === prod.id);
+      return {
+        id: prod.id,
+        name: prod.name,
+        amount: r?.amount || "",
+        currency: prod.currency,
+        status: prod.status,
+      }
+    }));
   };
 
   useEffect(() => {
@@ -141,11 +144,11 @@ const BalanceBulkDrawer = ({
   const handleUpdateStatus = async (index: number, status: ProductStatus) => {
     setLoading(true);
     try {
-      await updateProductStatus(row[index].id, {status});
+      await updateProductStatus(row[index].id, { status });
       const newRows = [...row];
       newRows[index].status = status;
       setRows(newRows);
-    } catch(error) {
+    } catch (error) {
       enqueueSnackbar((error as Error).message, { severity: "error" });
     } finally {
       setLoading(false);
@@ -180,11 +183,11 @@ const BalanceBulkDrawer = ({
         label: "资产名称",
         key: "name",
         render: (r, i) => (
-          <Stack 
-            direction="row" 
-            spacing={0.75} 
-            alignItems="center" 
-            sx={{ cursor: "pointer"}}
+          <Stack
+            direction="row"
+            spacing={0.75}
+            alignItems="center"
+            sx={{ cursor: "pointer" }}
             onClick={() => handleUpdateStatus(i, r.status === "active" ? "inactive" : "active")}
           >
             <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: statusMeta[r.status].color }} />
