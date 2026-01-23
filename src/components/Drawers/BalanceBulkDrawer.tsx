@@ -19,13 +19,14 @@ import {
   IconButton,
 } from "@mui/material";
 import { meta as statusMeta } from "../StatusBadge";
-import { createProduct, listProducts, ProductStatus, updateProductStatus, type Product, type ProductCreate } from "@/api/deposits";
+import { createProduct, listProducts, updateProductStatus, type Product, type ProductCreate } from "@/api/deposits";
 import { useEffect } from "react";
 import { balanceListSchema, balanceSchema } from "@/validation/deposit";
 import useCurrencyStore, { selectCurrencyMap } from "@/store/currency";
 import { enqueueSnackbar } from "@/store/snackbar"
 import { Add } from "@mui/icons-material";
 import ProductAddDialog from "@/components/Dialogs/ProductAddDialog";
+import type { ProductStatus } from "@/api/types";
 
 export type BalanceBulkDrawerProps = {
   open: boolean;
