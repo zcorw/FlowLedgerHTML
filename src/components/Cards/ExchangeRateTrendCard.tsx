@@ -23,7 +23,7 @@ import {
 } from 'recharts';
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { useMemo, useState, type ChangeEvent } from 'react';
-import { importRates } from "@/api/currency";
+import { importRates, triggerExchangeRateSync } from "@/api/currency";
 import { enqueueSnackbar } from "@/store/snackbar";
 
 type RangeKey = 'week' | 'month' | 'quarter' | 'year';
@@ -156,12 +156,17 @@ const ExchangeRateTrendCard = () => {
     }
   };
 
+  function fetchLatestRates() {
+    triggerExchangeRateSync().catch((error) => enqueueSnackbar(error.message, { severity: 'error' }));
+  }
+
   return (
     <Card sx={{ height: 380 }}>
       <CardContent sx={{ height: '100%' }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="h6">汇率走势</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
+            <Button size="small" variant="outlined" color='info' onClick={fetchLatestRates}>获取最新汇率</Button>
             <Button size="small" variant="outlined" component="label" disabled={isImporting}>
               导入历史汇率
               <input type="file" hidden accept=".xlsx" onChange={handleImportRates} />

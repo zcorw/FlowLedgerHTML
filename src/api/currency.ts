@@ -54,6 +54,8 @@ export type ExchangeRateMapResponse = {
 
 export type ExchangeRateResponse = ExchangeRateSingle | ExchangeRateMapResponse;
 
+export type ExchangeRateSyncResponse = Record<string, unknown>;
+
 export type ConvertRequest = {
   amount: string; // decimal string, up to 6 decimals, may be negative
   from: string;
@@ -206,10 +208,10 @@ export async function getExchangeRates(params: ListExchangeRatesParams) {
 /**
  * Trigger an immediate FX sync.
  * POST /exchange-rates/sync
- * Response: generic object (API returns arbitrary fields)
+ * Response: ExchangeRateSyncResponse (API returns arbitrary fields)
  */
 export async function triggerExchangeRateSync() {
-  return post<Record<string, unknown>>('/exchange-rates/sync');
+  return post<ExchangeRateSyncResponse>('/exchange-rates/sync');
 }
 
 /**
