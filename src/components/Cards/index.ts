@@ -11,3 +11,4 @@ export { default as ExpenseDetailsCard } from './ExpenseDetailsCard';
 export { default as DepositsTotalCard } from './DepositsTotalCard';
 export { default as AssetDetailsCard } from './AssetDetailsCard';
 export { default as InstitutionDetailsCard } from './InstitutionDetailsCard';
+export { default as InstitutionAssetChangeCard } from './InstitutionAssetChangeCard';

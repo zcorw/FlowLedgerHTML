@@ -2,7 +2,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Box, Button, Grid, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import { AssetDetailsCard, DepositsTotalCard, InstitutionDetailsCard } from "@/components/Cards";
+import {
+  AssetDetailsCard,
+  DepositsTotalCard,
+  InstitutionAssetChangeCard,
+  InstitutionDetailsCard,
+} from "@/components/Cards";
 import DepositDialog, { type DepositSubmitPayload } from "@/components/Dialogs/DepositDialog";
 import {
   createInstitution,
@@ -15,14 +20,13 @@ import {
   deleteProduct,
   createLatestBalance,
   type Institution,
-  type InstitutionType,
   type ListInstitutionsParams,
   type ListProductsParams,
   type Product,
   type ProductCreate,
-  type ProductType,
   type LatestBalanceBatchParams,
 } from "@/api/deposits";
+import type { InstitutionType, ProductType } from "@/api/types";
 import TabButtons from "@/components/TabButtons";
 import type { AssetRow } from "@/components/Cards/AssetDetailsCard";
 import type { FilterItem } from "@/components/Tables/TableFilter";
@@ -415,7 +419,7 @@ const DepositsPage = () => {
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} lg={4}>
             <DepositsTotalCard amount={1000} date="2023-06" changeAmount={500} />
           </Grid>
         </Grid>
@@ -459,6 +463,11 @@ const DepositsPage = () => {
           )}
         </Grid>
 
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <InstitutionAssetChangeCard />
+          </Grid>
+        </Grid>
         <DepositDialog open={dialogOpen} onClose={handleCloseDialog} onSubmit={handleSubmit} />
         <ConfirmDialog
           open={confirmState.open}

@@ -1,10 +1,5 @@
 import { del, get, patch, post } from './client';
-
-export type InstitutionType = 'bank' | 'broker' | 'other';
-
-export type ProductType = 'deposit' | 'investment' | 'securities' | 'other';
-export type ProductStatus = 'active' | 'inactive' | 'closed';
-export type RiskLevel = 'flexible' | 'stable' | 'high_risk';
+import type { InstitutionType, RiskLevel, ProductStatus, ProductType } from './types';
 
 export type Institution = {
   id: number;
