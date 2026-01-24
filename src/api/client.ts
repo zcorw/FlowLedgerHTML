@@ -36,11 +36,8 @@ http.interceptors.response.use(
   (response: AxiosResponse) => response.data,
   (error: AxiosError<{ error?: { code?: string; message?: string }, detail?: string }>) => {
     const status = error.response?.status;
-    const code = error.response?.data?.detail;
-    console.log(status, error.response);
     if (
-      status === 401 &&
-      (code === 'invalid_token_signature' || code === 'token_expired' || code === 'unauthorized')
+      status === 401
     ) {
       tokenStorage.clear();
       if (typeof window !== 'undefined') {

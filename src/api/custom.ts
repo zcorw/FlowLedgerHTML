@@ -1,5 +1,6 @@
-import { get } from './client';
+﻿import { get } from './client';
 import type { InstitutionType } from './types';
+import dayjs from 'dayjs';
 
 export type InstitutionAssetChange = {
   institution_id: number;
@@ -22,6 +23,41 @@ export type ListInstitutionAssetChangesParams = {
   limit?: number;
 };
 
+export type LatestTotalAsset = {
+  total: string;
+  date: string; // ISO date-time
+}
+
+export type LatestTotalAssetList = {
+  date: string;
+  change: number;
+  rate: number;
+  amount: number;
+}
+
+export type MonthlyAssetPoint = {
+  month: string;
+  amount: number;
+}
+
+export type MonthlyAssetResult = {
+  currency: string;
+  data: MonthlyAssetPoint[];
+}
+
+export type MonthlyAssetParams = {
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+
+/**
+ * List monthly asset history within a date range.
+ */
+export async function getMonthlyAsset(params: MonthlyAssetParams) {
+  return get<MonthlyAssetResult>('/custom/assets/monthly', { params });
+}
+
 /**
  * List institution asset changes compared to previous snapshot.
  * GET /custom/institutions/assets/changes
@@ -30,3 +66,25 @@ export type ListInstitutionAssetChangesParams = {
 export async function listInstitutionAssetChanges(params?: ListInstitutionAssetChangesParams) {
   return get<InstitutionAssetChangeList>('/custom/institutions/assets/changes', { params });
 }
+
+/**
+ * List latest total asset.
+ * GET /custom/institutions/assets/latest
+ * Response: LatestTotalAsset[]
+ */
+export async function monthlyAssetChange(): Promise<LatestTotalAssetList> {
+  const params: MonthlyAssetParams = { 
+    limit: 2,
+   };
+  const result = await getMonthlyAsset(params);
+  const change = result.data[0].amount - result.data[1].amount;
+  const rate = change / result.data[0].amount;
+  return { 
+    date: dayjs(result.data[0].month).format('YYYY-MM'),
+    change,
+    rate,
+    amount: result.data[0].amount,
+  };
+}
+
+

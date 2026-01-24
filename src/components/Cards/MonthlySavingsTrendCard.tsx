@@ -10,15 +10,13 @@ import {
 } from 'recharts';
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
 import { useEffect, useState } from 'react';
-import { getMonthlyAsset, type MonthlyAssetPoint } from '@/api/deposits';
+import { getMonthlyAsset, type MonthlyAssetPoint, type MonthlyAssetParams } from '@/api/custom';
 import useCurrencyStore, { selectCurrencyMap } from '@/store/currency';
+import dayjs from 'dayjs';
 
-const getMonthRange = () => {
-  const now = new Date();
-  const fromDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+const getMonthParams = (): MonthlyAssetParams => {
   return {
-    from_dt: fromDate.toISOString().slice(0, 10),
-    to_dt: now.toISOString().slice(0, 10),
+    limit: 10,
   };
 };
 
@@ -43,10 +41,10 @@ const MonthlySavingsTrendCard = () => {
       setLoading(true);
       setError(null);
       try {
-        const range = getMonthRange();
+        const range = getMonthParams();
         const result = await getMonthlyAsset(range);
         if (!active) return;
-        setData(result.data ?? []);
+        setData(result.data.reverse().map((item) => ({ ...item, month: dayjs(item.month).format('YYYY-MM') })) ?? []);
         setCurrency(result.currency);
       } catch (err) {
         if (!active) return;

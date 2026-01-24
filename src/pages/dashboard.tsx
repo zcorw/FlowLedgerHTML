@@ -19,7 +19,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
-import { ExchangeRateTrendCard, MonthlySavingsTrendCard, MonthlySpendingCard, TotalBalanceCard, UpcomingPaymentsCard } from '../components/Cards/index';
+import { ExchangeRateTrendCard, MonthlySavingsTrendCard, MonthlySpendingCard, TotalBalanceCard, UpcomingPaymentsCard, DepositsTotalCard } from '../components/Cards/index';
 
 type PaymentRow = {
   title: string;
@@ -69,7 +69,7 @@ const DashboardPage = () => {
 
         <Grid container spacing={2}>
           <Grid item xs={12} sm={4}>
-            <TotalBalanceCard amount={1000} scale={1} />
+            <DepositsTotalCard />
           </Grid>
           <Grid item xs={12} sm={4}>
             <MonthlySpendingCard amount={6820} lastMonthAmount={7200} />

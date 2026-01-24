@@ -420,7 +420,7 @@ const DepositsPage = () => {
 
         <Grid container spacing={2}>
           <Grid item xs={12} lg={4}>
-            <DepositsTotalCard amount={1000} date="2023-06" changeAmount={500} />
+            <DepositsTotalCard />
           </Grid>
         </Grid>
 
