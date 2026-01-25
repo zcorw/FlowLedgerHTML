@@ -19,6 +19,7 @@ import {
   deleteInstitution,
   deleteProduct,
   createLatestBalance,
+  exportBalances,
   type Institution,
   type ListInstitutionsParams,
   type ListProductsParams,
@@ -107,6 +108,7 @@ const DepositsPage = () => {
     keyword: "",
   });
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [institutionOptions, setInstitutionOptions] = useState<{ label: string; value: number }[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -304,6 +306,32 @@ const DepositsPage = () => {
     }
   };
 
+  const handleExportClick = async () => {
+    setExporting(true);
+    try {
+      const blob = await exportBalances();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const extension = blob.type.includes("csv")
+        ? "csv"
+        : blob.type.includes("excel") || blob.type.includes("spreadsheet")
+          ? "xlsx"
+          : "xlsx";
+      const filename = `balances-${dayjs().format("YYYYMMDD-HHmmss")}.${extension}`;
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error?.message || "导出失败，请稍后重试";
+      enqueueSnackbar(message, { severity: "error" });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   useEffect(() => {
     if (tabValue !== "asset") return;
 
@@ -407,6 +435,9 @@ const DepositsPage = () => {
             </Button>
             <Button variant="contained" color="primary" onClick={handleImportClick} disabled={importing}>
               {importing ? "导入中..." : "批量导入"}
+            </Button>
+            <Button variant="contained" color="warning" onClick={handleExportClick} disabled={exporting}>
+              {exporting ? "导出中..." : "导出"}
             </Button>
             <input
               ref={fileInputRef}

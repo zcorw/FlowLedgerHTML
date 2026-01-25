@@ -350,5 +350,8 @@ export async function createLatestBalance(institution_id: number, payload: Lates
 }
 
 /**
- * 查询账号每月存款列表（支持时间范围）
+ * 导出产品余额快照
  */
+export async function exportBalances() {
+  return get<Blob>(`/export/deposit`, { responseType: 'blob' });
+}
