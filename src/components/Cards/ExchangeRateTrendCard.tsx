@@ -22,105 +22,16 @@ import {
   YAxis,
 } from 'recharts';
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
-import { useMemo, useState, type ChangeEvent } from 'react';
-import { importRates, triggerExchangeRateSync } from "@/api/currency";
+import { useMemo, useState, useEffect, type ChangeEvent } from 'react';
+import { importRates, triggerExchangeRateSync, listExchangeRates, type ListExchangeRatesParams, type ExchangeRateRangeResponse } from "@/api/currency";
 import { enqueueSnackbar } from "@/store/snackbar";
+import useCurrencyStore, { selectCurrencies } from "@/store/currency";
+import useAuthStore, { selectPreferences } from "@/store/auth";
+import dayjs from "dayjs";
 
 type RangeKey = 'week' | 'month' | 'quarter' | 'year';
 type RatePoint = { label: string; rate: number };
-
-const exchangeRateSeries: Record<string, Record<RangeKey, RatePoint[]>> = {
-  USD: {
-    week: [
-      { label: '周一', rate: 7.24 },
-      { label: '周二', rate: 7.22 },
-      { label: '周三', rate: 7.21 },
-      { label: '周四', rate: 7.19 },
-      { label: '周五', rate: 7.18 },
-      { label: '周六', rate: 7.2 },
-      { label: '周日', rate: 7.19 },
-    ],
-    month: [
-      { label: '第1周', rate: 7.26 },
-      { label: '第2周', rate: 7.23 },
-      { label: '第3周', rate: 7.21 },
-      { label: '第4周', rate: 7.18 },
-    ],
-    quarter: [
-      { label: '1月', rate: 7.27 },
-      { label: '2月', rate: 7.25 },
-      { label: '3月', rate: 7.21 },
-    ],
-    year: [
-      { label: '1月', rate: 7.31 },
-      { label: '3月', rate: 7.25 },
-      { label: '5月', rate: 7.22 },
-      { label: '7月', rate: 7.18 },
-      { label: '9月', rate: 7.19 },
-      { label: '11月', rate: 7.16 },
-    ],
-  },
-  EUR: {
-    week: [
-      { label: '周一', rate: 7.92 },
-      { label: '周二', rate: 7.95 },
-      { label: '周三', rate: 7.97 },
-      { label: '周四', rate: 7.94 },
-      { label: '周五', rate: 7.9 },
-      { label: '周六', rate: 7.91 },
-      { label: '周日', rate: 7.93 },
-    ],
-    month: [
-      { label: '第1周', rate: 7.98 },
-      { label: '第2周', rate: 7.95 },
-      { label: '第3周', rate: 7.93 },
-      { label: '第4周', rate: 7.91 },
-    ],
-    quarter: [
-      { label: '1月', rate: 7.99 },
-      { label: '2月', rate: 7.97 },
-      { label: '3月', rate: 7.92 },
-    ],
-    year: [
-      { label: '1月', rate: 8.02 },
-      { label: '3月', rate: 7.98 },
-      { label: '5月', rate: 7.95 },
-      { label: '7月', rate: 7.93 },
-      { label: '9月', rate: 7.9 },
-      { label: '11月', rate: 7.88 },
-    ],
-  },
-  JPY: {
-    week: [
-      { label: '周一', rate: 0.048 },
-      { label: '周二', rate: 0.0485 },
-      { label: '周三', rate: 0.0491 },
-      { label: '周四', rate: 0.0488 },
-      { label: '周五', rate: 0.0482 },
-      { label: '周六', rate: 0.0484 },
-      { label: '周日', rate: 0.0486 },
-    ],
-    month: [
-      { label: '第1周', rate: 0.0489 },
-      { label: '第2周', rate: 0.0485 },
-      { label: '第3周', rate: 0.0481 },
-      { label: '第4周', rate: 0.0483 },
-    ],
-    quarter: [
-      { label: '1月', rate: 0.0493 },
-      { label: '2月', rate: 0.0487 },
-      { label: '3月', rate: 0.0482 },
-    ],
-    year: [
-      { label: '1月', rate: 0.0498 },
-      { label: '3月', rate: 0.049 },
-      { label: '5月', rate: 0.0486 },
-      { label: '7月', rate: 0.0483 },
-      { label: '9月', rate: 0.0481 },
-      { label: '11月', rate: 0.0479 },
-    ],
-  },
-};
+type RateOption = { base: string; quote: string };
 
 const formatRate = (value?: ValueType): string => {
   if (Array.isArray(value)) return formatRate(value[0]);
@@ -128,14 +39,27 @@ const formatRate = (value?: ValueType): string => {
 };
 
 const ExchangeRateTrendCard = () => {
-  const [selectedCurrency, setSelectedCurrency] = useState<keyof typeof exchangeRateSeries>('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('');
   const [selectedRange, setSelectedRange] = useState<RangeKey>('month');
   const [isImporting, setIsImporting] = useState(false);
+  const [rateSeries, setRateSeries] = useState<RatePoint[]>([]);
+  const [currencyOptions, setCurrencyOptions] = useState<RateOption[]>([]);
 
-  const rateSeries = useMemo(
-    () => exchangeRateSeries[selectedCurrency][selectedRange] ?? [],
-    [selectedCurrency, selectedRange],
-  );
+  const _currencies = useCurrencyStore(selectCurrencies);
+
+  const _preferences = useAuthStore(selectPreferences);
+  useEffect(() => {
+    if (!_preferences || !_currencies.length) return;
+    const options = _currencies
+      .filter((c) => c.code !== _preferences.base_currency)
+      .map<RateOption>((c) => ({
+        base: c.code,
+        quote: _preferences.base_currency as string,
+      }));
+    setCurrencyOptions(options);  
+    console.log("options", options);
+    setSelectedCurrency(options[0].base);  
+  }, [_preferences, _currencies]);
 
   const handleImportRates = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -160,6 +84,34 @@ const ExchangeRateTrendCard = () => {
     triggerExchangeRateSync().catch((error) => enqueueSnackbar(error.message, { severity: 'error' }));
   }
 
+  useEffect(() => {
+    console.log("selectedCurrency", selectedCurrency, "selectedRange", selectedRange);
+    if (!selectedCurrency || !selectedRange) return;
+    const params: ListExchangeRatesParams = {
+      base: selectedCurrency,
+      quote: _preferences?.base_currency as string,
+      from: dayjs().format("YYYY-MM-DD"),
+      to: dayjs().format("YYYY-MM-DD"),
+    };
+    switch (selectedRange) {
+      case "week":
+        params.from = dayjs().subtract(1, 'week').format("YYYY-MM-DD");
+        break;
+      case "month":
+        params.from = dayjs().subtract(1, 'month').format("YYYY-MM-DD");
+        break;
+      case "quarter":
+        params.from = dayjs().subtract(3, 'month').format("YYYY-MM-DD");
+        break;
+      case "year":
+        params.from = dayjs().subtract(1, 'year').format("YYYY-MM-DD");
+        break;
+    }
+    listExchangeRates(params).then((result) => {
+      setRateSeries(result.items.map((r) => ({ label: r.date, rate: r.rate })));
+    });
+  }, [selectedCurrency, selectedRange]);
+
   return (
     <Card sx={{ height: 380 }}>
       <CardContent sx={{ height: '100%' }}>
@@ -175,12 +127,14 @@ const ExchangeRateTrendCard = () => {
               <Select
                 value={selectedCurrency}
                 onChange={(event: SelectChangeEvent<string>) =>
-                  setSelectedCurrency(event.target.value as keyof typeof exchangeRateSeries)
+                  setSelectedCurrency(event.target.value)
                 }
               >
-                <MenuItem value="USD">USD/CNY</MenuItem>
-                <MenuItem value="EUR">EUR/CNY</MenuItem>
-                <MenuItem value="JPY">JPY/CNY</MenuItem>
+                {currencyOptions.map((option) => (
+                  <MenuItem key={option.base} value={option.base}>
+                    {option.base} / {option.quote}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <ToggleButtonGroup

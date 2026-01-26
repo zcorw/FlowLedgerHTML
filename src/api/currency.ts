@@ -80,10 +80,17 @@ export type ListCurrenciesParams = {
   sort?: string;
 };
 
-export type ListExchangeRatesParams = {
+export type SingleExchangeRateParams = {
   base: string;
   quote?: string;
-  date?: string; // ISO date
+  date?: string;
+};
+
+export type ListExchangeRatesParams = {
+  base: string;
+  quote: string;
+  from: string; // "YYYY-MM-DD"
+  to: string; // "YYYY-MM-DD"
 };
 
 export type ImportExchangeRateResult = {
@@ -119,6 +126,19 @@ export type ImportTaskStatus<T = unknown> = {
   created_at: string;
   updated_at: string;
 };
+
+export type ExchangeRateItem = {
+  date: string; // ISO date
+  rate: number;
+}
+
+export type ExchangeRateRangeResponse = {
+  base: string;
+  quote: string;
+  from_date: string; // ISO date
+  to_date: string; // ISO date
+  items: ExchangeRateItem[]
+}
 
 const IMPORT_POLL_INTERVAL_MS = 1500;
 const IMPORT_POLL_TIMEOUT_MS = 10 * 60 * 1000;
@@ -201,8 +221,17 @@ export async function bulkUpsertCurrencies(payload: CurrencyUpsert[]) {
  * GET /exchange-rates
  * Response: ExchangeRateResponse (single or map)
  */
-export async function getExchangeRates(params: ListExchangeRatesParams) {
+export async function getExchangeRate(params: SingleExchangeRateParams) {
   return get<ExchangeRateResponse>('/exchange-rates', { params });
+}
+
+/**
+ * List exchange rates for a base currency with date range filters.
+ * GET /exchange-rates
+ * Response: ExchangeRatePage
+ */
+export async function listExchangeRates(params?: ListExchangeRatesParams) {
+  return get<ExchangeRateRangeResponse>('/exchange-rates/range', { params });
 }
 
 /**
