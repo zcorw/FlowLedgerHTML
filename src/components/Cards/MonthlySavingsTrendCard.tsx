@@ -84,7 +84,7 @@ const MonthlySavingsTrendCard = () => {
           <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis />
+            <YAxis tickFormatter={(value) => `${value / 10000} 万`} />
             <Tooltip formatter={(value) => [formatCurrency(value), '存款']} />
             <Line
               type="monotone"
