@@ -51,6 +51,17 @@ export type MonthlyAssetParams = {
   limit?: number;
 }
 
+export type CurrencyAssetItem = {
+  amount: number;
+  change: number;
+  rate: number;
+  currency: string;
+}
+
+export type AssetCurrencyResponse = {
+  data: CurrencyAssetItem[]
+}
+
 /**
  * List monthly asset history within a date range.
  */
@@ -87,4 +98,11 @@ export async function monthlyAssetChange(): Promise<LatestTotalAssetList> {
   };
 }
 
-
+/**
+ * List total assets by common currencies (including FX assets).
+ * GET /custom/assets/summary/by-currency
+ * Response: CurrencyAssetSummary[]
+ */
+export async function listAssetTotalByCurrency() {
+  return get<AssetCurrencyResponse>('/custom/total/assets/currency');
+}
