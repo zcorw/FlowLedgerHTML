@@ -19,7 +19,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { ValueType } from 'recharts/types/component/DefaultTooltipContent';
-import { ExchangeRateTrendCard, MonthlySavingsTrendCard, MonthlySpendingCard, TotalBalanceCard, UpcomingPaymentsCard, DepositsTotalCard } from '../components/Cards/index';
+import { ExchangeRateTrendCard, MonthlySavingsTrendCard, MonthlySpendingCard, UpcomingPaymentsCard, DepositsTotalCard } from '../components/Cards/index';
 
 type PaymentRow = {
   title: string;

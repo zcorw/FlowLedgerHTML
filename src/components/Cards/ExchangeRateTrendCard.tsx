@@ -85,7 +85,6 @@ const ExchangeRateTrendCard = () => {
   }
 
   useEffect(() => {
-    console.log("selectedCurrency", selectedCurrency, "selectedRange", selectedRange);
     if (!selectedCurrency || !selectedRange) return;
     const params: ListExchangeRatesParams = {
       base: selectedCurrency,

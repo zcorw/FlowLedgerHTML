@@ -1,4 +1,3 @@
-export { default as TotalBalanceCard } from './TotalBalanceCard';
 export { default as MonthlySpendingCard } from './MonthlySpendingCard';
 export { default as MonthlySavingsTrendCard } from './MonthlySavingsTrendCard';
 export { default as DailySpendingCard } from './DailySpendingCard';
