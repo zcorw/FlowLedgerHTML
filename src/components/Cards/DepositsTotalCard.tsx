@@ -1,7 +1,7 @@
 import { Card, CardContent, Chip, Grid, Stack, Typography } from "@mui/material"
 import useAuthStore, { formatAmount, selectPreferences } from "@/store/auth";
 import { monthlyAssetChange } from "@/api/custom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 const DepositsTotalCard = () => {
   const [amount, setAmount] = useState(0);
@@ -10,9 +10,10 @@ const DepositsTotalCard = () => {
   const [changePercent, setChangePercent] = useState(0);
   const preferences = useAuthStore(selectPreferences);
   // Format change percent string，如果本月比上月上涨显示“较上月 +￥5,000.00，上涨4.3%”，否则显示“较上月 较上月 -￥5,000.00，下跌4.3%”
-  const changePercentString = changePercent > 0 ? 
+  const changePercentString = useMemo(() => changePercent > 0 ? 
     `较上月 +${formatAmount(changeAmount, preferences)}，上涨${changePercent.toFixed(1)}%` : 
-    `较上月 ${formatAmount(changeAmount, preferences)}，下跌${Math.abs(changePercent).toFixed(1)}%`;
+    `较上月 ${formatAmount(changeAmount, preferences)}，下跌${Math.abs(changePercent).toFixed(1)}%`,
+    [changeAmount, changePercent, preferences]);
   useEffect(() => {
     monthlyAssetChange().then(res => {
       setAmount(res.amount);
