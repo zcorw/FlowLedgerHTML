@@ -111,7 +111,7 @@ const InstitutionAssetChangeCard = () => {
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
-            <YAxis tickFormatter={(value) => formatAmount(value)} />
+            <YAxis tickFormatter={(value) => `${value / 10000} 万`} />
             <Tooltip
               formatter={(value) => [formatAmount(value as ValueType | undefined), '变动'] as [string, string]}
               content={({ active, payload }) => {

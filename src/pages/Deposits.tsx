@@ -7,6 +7,8 @@ import {
   DepositsTotalCard,
   InstitutionAssetChangeCard,
   InstitutionDetailsCard,
+  AssetCurrencyCard,
+  AssetCurrencyBarCard,
 } from "@/components/Cards";
 import DepositDialog, { type DepositSubmitPayload } from "@/components/Dialogs/DepositDialog";
 import {
@@ -39,7 +41,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import BalanceBulkDrawer, { type BalanceBulkDrawerProps } from "@/components/Drawers/BalanceBulkDrawer";
 import AssetBalanceSnapshotDrawer from "@/components/Drawers/AssetBalanceSnapshotDrawer";
 import { listAssetTotalByCurrency, type CurrencyAssetItem } from "@/api/custom";
-import AssetCurrencyCard, { type AssetCurrencyCardProps } from "@/components/Cards/AssetCurrencyCard"
+import type { AssetCurrencyCardProps } from "@/components/Cards/AssetCurrencyCard"
 
 const tabs = [
   { label: "资产", value: "asset" },
@@ -133,7 +135,7 @@ const DepositsPage = () => {
     open: boolean;
     asset?: AssetRow;
   }>({ open: false });
-  const [currencySummary, setCurrencySummary] = useState<Record<string, CurrencyAssetItem>>({});
+  const [currencySummary, setCurrencySummary] = useState<CurrencyAssetItem[]>([]);
 
   const currencyMap = useCurrencyStore(selectCurrencies);
 
@@ -142,9 +144,10 @@ const DepositsPage = () => {
   const localCurrencyProps = useMemo<AssetCurrencyCardProps>(() => {
     const currency = preferences?.base_currency as string | undefined;
     if (!currency) return {} as AssetCurrencyCardProps;
-    const amount = currencySummary[currency]?.amount || 0;
-    const change = currencySummary[currency]?.change || 0;
-    const rate = currencySummary[currency]?.rate || 0;
+    const item = currencySummary.filter((item) => item.currency === currency)[0];
+    const amount = item?.amount || 0;
+    const change = item?.change || 0;
+    const rate = item?.rate || 0;
     return { title: "本币资产", amount, change, rate };
   }, [currencySummary]);
 
@@ -154,12 +157,11 @@ const DepositsPage = () => {
     let amount = 0;
     let change = 0;
     let rate = 0;
-    for (const key in currencySummary) {
-      console.log(currencySummary[key]);
-      if (key !== currency) {
-        amount += +currencySummary[key].amount;
-        change += +currencySummary[key].change;
-        rate += change / currencySummary[key].amount;
+    for (const item of currencySummary) {
+      if (item.currency !== currency) {
+        amount += +item.amount;
+        change += +item.change;
+        rate += change / item.amount;
       }
     }
     return { title: "外币资产", amount, change, rate };
@@ -366,8 +368,7 @@ const DepositsPage = () => {
 
   useEffect(() => {
     listAssetTotalByCurrency().then((res) => {
-      const mapped = res.data.reduce<Record<string, CurrencyAssetItem>>((acc, item) => ({ ...acc, [item.currency]: item }), {});
-      setCurrencySummary(mapped);
+      setCurrencySummary(res.data);
     });
   }, []);
 
@@ -542,6 +543,11 @@ const DepositsPage = () => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <InstitutionAssetChangeCard />
+          </Grid>
+        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <AssetCurrencyBarCard data={currencySummary} />
           </Grid>
         </Grid>
         <DepositDialog open={dialogOpen} onClose={handleCloseDialog} onSubmit={handleSubmit} />
