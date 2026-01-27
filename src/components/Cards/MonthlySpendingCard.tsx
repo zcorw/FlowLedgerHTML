@@ -15,7 +15,7 @@ const MonthlySpendingCard = (_props: MonthlySpendingCardProps) => {
           本月支出
         </Typography>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="body1" fontSize={30} fontWeight={700} color="error">{`-${formatAmount(_props.amount, preferences)}`}</Typography>
+          <Typography variant="body1" fontSize={30} fontWeight={700}>{formatAmount(_props.amount, preferences)}</Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary" mt="18px">
           上月支出：-{formatAmount(_props.lastMonthAmount, preferences)}

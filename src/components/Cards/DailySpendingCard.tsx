@@ -30,7 +30,7 @@ const DailySpendingCard = (_props: DailySpendingCardProps) => {
       <CardContent>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h6" gutterBottom>
-            本月支出
+            平均支出
           </Typography>
           <PeriodSelector
             periods={periods}
@@ -39,7 +39,7 @@ const DailySpendingCard = (_props: DailySpendingCardProps) => {
           />
         </Stack>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="body1" fontSize={30} fontWeight={700} color="error">{`-${formatAmount(_props.amount, preferences)}`}</Typography>
+          <Typography variant="body1" fontSize={30} fontWeight={700}>{formatAmount(_props.amount, preferences)}</Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary" mt="18px">
           {formatChangeRate(_props.changeRate)}

@@ -490,13 +490,13 @@ const DepositsPage = () => {
         </Stack>
 
         <Grid container spacing={2}>
-          <Grid item xs={12} lg={4}>
+          <Grid item xs={12} sm={4}>
             <DepositsTotalCard />
           </Grid>
-          <Grid item xs={12} lg={4}>
+          <Grid item xs={12} sm={4}>
             <AssetCurrencyCard {...localCurrencyProps} />
           </Grid>
-          <Grid item xs={12} lg={4}>
+          <Grid item xs={12} sm={4}>
             <AssetCurrencyCard {...fxCurrencyProps} />
           </Grid>
         </Grid>

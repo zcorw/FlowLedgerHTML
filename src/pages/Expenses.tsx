@@ -1,193 +1,461 @@
-import { Box, Chip, Grid, Stack, TextField, Typography, Card, CardContent, ButtonGroup, Button } from '@mui/material';
-import { MonthlySpendingCard, DailySpendingCard, TopCategoriesCard, CategoryRatioCard, ExpenseDetailsCard } from '@/components/Cards/index';
-import type { ExpenseRow, ExpenseDetailsCardProps } from '@/components/Cards/ExpenseDetailsCard';
-import { useState, useEffect, useMemo } from 'react';
+﻿import { Box, Button, Chip, Grid, Stack, Typography } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import dayjs from "dayjs";
+import {
+  MonthlySpendingCard,
+  DailySpendingCard,
+  TopCategoriesCard,
+  CategoryRatioCard,
+  ExpenseDetailsCard,
+} from "@/components/Cards";
+import type { ExpenseRow } from "@/components/Cards/ExpenseDetailsCard";
+import type { FilterItem } from "@/components/Tables/TableFilter";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import ExpenseDialog from "@/components/Dialogs/ExpenseDialog";
+import {
+  createExpense,
+  deleteExpense,
+  listCategories,
+  listExpenses,
+  type Category,
+  type Expense,
+  type ExpenseList,
+} from "@/api/expense";
+import useCurrencyStore, { selectCurrencies } from "@/store/currency";
+import useAuthStore, { selectPreferences } from "@/store/auth";
+import { enqueueSnackbar } from "@/store/snackbar";
 
-const topCategoryData = [
-  { label: '餐饮', percent: 38, color: '#26c6da' },
-  { label: '居住', percent: 20, color: '#5c6bc0' },
-  { label: '出行', percent: 10, color: '#90a4ae' },
-];
+const rowsPerPage = 6;
 
-const topCurrencyData = [
-  { label: '美元', percent: 38, color: '#ffb300' },
-  { label: '日元', percent: 20, color: '#8d6e63' },
-  { label: '港币', percent: 20, color: '#78909c' },
-];
-
-const expenseRows: ExpenseRow[] = [
-  { id: '1', date: '09-12', category: '餐饮', amount: '- ¥ 86.00', currency: 'CNY', note: '午餐' },
-  { id: '2', date: '09-11', category: '出行', amount: '- ¥ 32.00', currency: 'CNY', note: '地铁' },
-  { id: '3', date: '09-10', category: '订阅', amount: '- $ 29.00', currency: 'USD', note: '云服务' },
-  { id: '4', date: '09-09', category: '居住', amount: '- ¥ 2600.00', currency: 'CNY', note: '房租' },
-  { id: '5', date: '09-08', category: '餐饮', amount: '- ¥ 58.00', currency: 'CNY', note: '咖啡' },
-  { id: '6', date: '09-07', category: '餐饮', amount: '- ¥ 120.00', currency: 'CNY', note: '聚餐' },
-];
-
-const FilterItems: ExpenseDetailsCardProps['filters'] = [
-  { 
-    key: 'time',
-    label: '时间',
-    type: 'menu',
+const filterItems: FilterItem[] = [
+  {
+    key: "time",
+    label: "时间",
+    type: "menu",
     options: [
-      { label: '本周', value: 'week' },
-      { label: '30天', value: '30d' },
-      { label: '本月', value: 'month' },
-      { label: '全部', value: 'all' },
+      { label: "本周", value: "week" },
+      { label: "30天", value: "30d" },
+      { label: "本月", value: "month" },
+      { label: "全部", value: "all" },
     ],
   },
-  { 
-    key: 'currency',
-    label: '币种',
-    type: 'menu',
-    options: [
-      { label: '全部', value: 'all' },
-      { label: 'CNY', value: 'CNY' },
-      { label: 'USD', value: 'USD' },
-    ],
+  {
+    key: "currency",
+    label: "币种",
+    type: "menu",
+    options: [{ label: "全部", value: "all" }],
   },
-  { 
-    key: 'keyword',
-    label: '关键词',
-    type: 'input',
+  {
+    key: "keyword",
+    label: "关键字",
+    type: "input",
   },
 ];
 
-// 时间范围选项
-const timeOptions = [
-  { label: '本周', value: 'week' },
-  { label: '本月', value: 'month' },
-  { label: '30天', value: '30d' },
-]
+const ratioColors = ["#26c6da", "#5c6bc0", "#ffb300", "#8d6e63", "#78909c", "#26a69a"];
+
+const parseAmount = (amount: string | null | undefined) => {
+  if (!amount) return 0;
+  const value = Number(amount);
+  return Number.isFinite(value) ? Math.abs(value) : 0;
+};
+
+const buildRange = (period: string) => {
+  const now = dayjs();
+  if (period === "all") {
+    return { from: undefined, to: undefined, days: undefined };
+  }
+  if (period === "month") {
+    const from = now.startOf("month");
+    return {
+      from: from.startOf("day").toISOString(),
+      to: now.endOf("day").toISOString(),
+      days: now.diff(from, "day") + 1,
+    };
+  }
+  if (period === "30d") {
+    const from = now.subtract(29, "day");
+    return { from: from.startOf("day").toISOString(), to: now.endOf("day").toISOString(), days: 30 };
+  }
+  const from = now.subtract(6, "day");
+  return { from: from.startOf("day").toISOString(), to: now.endOf("day").toISOString(), days: 7 };
+};
+
+const formatCurrencyAmount = (currency: string, amount: number, language?: string) => {
+  try {
+    return new Intl.NumberFormat(language || "zh-CN", { style: "currency", currency }).format(amount);
+  } catch {
+    return amount.toFixed(2);
+  }
+};
 
 const ExpensesPage = () => {
-  const [dailyPeriod, setDailyPeriod] = useState('week');
+  const [dailyPeriod, setDailyPeriod] = useState("7d");
   const [page, setPage] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [pageCount, setPageCount] = useState(1);
+  const [rows, setRows] = useState<ExpenseRow[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [tableFilter, setTableFilter] = useState({
-    time: 'week',
-    currency: 'all',
-    keyword: '',
+    time: "month",
+    currency: "all",
+    keyword: "",
   });
-  const onTableFilterChange = (key: string, value: string | number) => {
-    setTableFilter((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-    setPage(1); // Reset to first page on filter change
-  }
+  const [monthExpenses, setMonthExpenses] = useState<Expense[]>([]);
+  const [lastMonthTotal, setLastMonthTotal] = useState(0);
+  const [dailyAverage, setDailyAverage] = useState(0);
+  const [dailyChangeRate, setDailyChangeRate] = useState(0);
+  const [confirmState, setConfirmState] = useState<{ open: boolean; row?: ExpenseRow }>({ open: false });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const currencies = useCurrencyStore(selectCurrencies);
+  const preferences = useAuthStore(selectPreferences);
+  const language = preferences?.language as string | undefined;
+  const defaultCurrency = preferences?.base_currency as string | undefined;
+
+  const categoryMap = useMemo(() => {
+    return categories.reduce<Record<number, string>>((acc, item) => {
+      acc[item.id] = item.name;
+      return acc;
+    }, {});
+  }, [categories]);
+
+  const categoryOptions = useMemo(() => {
+    return [
+      { label: "全部", value: "all" },
+      ...categories.map((category) => ({ label: category.name, value: String(category.id) })),
+    ];
+  }, [categories]);
+
+  const currencyOptions = useMemo(() => {
+    if (!currencies.length) {
+      return [
+        { label: "全部", value: "all" },
+        { label: "CNY", value: "CNY" },
+        { label: "USD", value: "USD" },
+      ];
+    }
+    return [{ label: "全部", value: "all" }, ...currencies.map((c) => ({ label: c.code, value: c.code }))];
+  }, [currencies]);
+
+  const tableFilters = useMemo<FilterItem[]>(() => {
+    return filterItems.map((item) => {
+      if (item.key === "currency") {
+        return { ...item, options: currencyOptions };
+      }
+      return item;
+    });
+  }, [currencyOptions]);
+
+  const handleFilterChange = (key: string, value: string | number) => {
+    setTableFilter((prev) => ({ ...prev, [key]: value }));
+    setPage(1);
+  };
+
+  const handleDeleteRequest = (row: ExpenseRow) => {
+    setConfirmState({ open: true, row });
+  };
+
+  const handleCloseConfirm = () => {
+    if (deleting) return;
+    setConfirmState({ open: false, row: undefined });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmState.row) return;
+    setDeleting(true);
+    try {
+      await deleteExpense(Number(confirmState.row.id));
+      enqueueSnackbar("消费删除成功", { severity: "success" });
+      setConfirmState({ open: false, row: undefined });
+      setPage(1);
+      setRefreshKey((prev) => prev + 1);
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error?.message || "删除失败，请稍后重试";
+      enqueueSnackbar(message, { severity: "error" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const summaryStats = useMemo(() => {
+    const total = monthExpenses.reduce((sum, item) => sum + parseAmount(item.amount), 0);
+
+    const categoryTotals = monthExpenses.reduce<Record<string, number>>((acc, item) => {
+      const label = item.category_id ? categoryMap[item.category_id] || "未分类" : "未分类";
+      acc[label] = (acc[label] || 0) + parseAmount(item.amount);
+      return acc;
+    }, {});
+
+    const currencyTotals = monthExpenses.reduce<Record<string, number>>((acc, item) => {
+      const currency = item.currency || "-";
+      acc[currency] = (acc[currency] || 0) + parseAmount(item.amount);
+      return acc;
+    }, {});
+
+    const toRatioItems = (source: Record<string, number>) => {
+      const entries = Object.entries(source).sort((a, b) => b[1] - a[1]);
+      return entries.map(([label, value], index) => ({
+        label,
+        value,
+        percent: total ? (value / total) * 100 : 0,
+        color: ratioColors[index % ratioColors.length],
+      }));
+    };
+
+    const categoryRatios = toRatioItems(categoryTotals);
+    const currencyRatios = toRatioItems(currencyTotals);
+
+    return {
+      total,
+      categoryRatios,
+      currencyRatios,
+    };
+  }, [monthExpenses, categoryMap]);
+
+  const monthlyTotal = summaryStats.total;
+  const topCategoryData = summaryStats.categoryRatios.slice(0, 3).map((item) => ({
+    label: item.label,
+    percent: item.percent,
+    color: item.color,
+  }));
+  const categoryRatioItems = summaryStats.categoryRatios.slice(0, 5).map((item) => ({
+    label: item.label,
+    percent: Number(item.percent.toFixed(1)),
+  }));
+  const currencyRatioItems = summaryStats.currencyRatios.slice(0, 5).map((item) => ({
+    label: item.label,
+    percent: Number(item.percent.toFixed(1)),
+  }));
+
   useEffect(() => {
-    console.log('Daily period changed to:', dailyPeriod);
-  }, [dailyPeriod]);
-
-  const categoryOptions = ['全部', '餐饮', '居住', '出行', '订阅'];
-
-  const latestDate = useMemo(() => {
-    const parsedDates = expenseRows.map((row) => new Date(`2024-${row.date}`));
-    return new Date(Math.max(...parsedDates.map((d) => d.getTime())));
+    const fetchCategories = async () => {
+      try {
+        const res = await listCategories();
+        setCategories(res.data || []);
+      } catch (error: any) {
+        const message = error?.response?.data?.error?.message || error?.message || "分类加载失败";
+        enqueueSnackbar(message, { severity: "error" });
+      }
+    };
+    fetchCategories();
   }, []);
 
-  const rowsPerPage = 3;
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const range = buildRange(tableFilter.time);
+        const params = {
+          page,
+          page_size: rowsPerPage,
+          from: range.from,
+          to: range.to,
+        };
+        const res: ExpenseList = await listExpenses(params);
 
-  const pageCount = Math.max(1, Math.ceil(10/ rowsPerPage));
-  const pagedRows = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return [].slice(start, start + rowsPerPage);
-  }, [page]);
+        const keyword = tableFilter.keyword.trim().toLowerCase();
+        const filtered = res.data.filter((item) => {
+          const matchesCurrency = tableFilter.currency === "all" || item.currency === tableFilter.currency;
+          const matchesCategory =
+            selectedCategory === "all" || String(item.category_id ?? "") === selectedCategory;
+          const matchesKeyword = !keyword
+            ? true
+            : [item.note, item.merchant, item.source_ref].some((field) =>
+                field ? field.toLowerCase().includes(keyword) : false
+              );
+          return matchesCurrency && matchesCategory && matchesKeyword;
+        });
+
+        setRows(
+          filtered.map((item) => ({
+            id: String(item.id),
+            date: item.occurred_at ? dayjs(item.occurred_at).format("MM-DD") : "--",
+            category: item.category_id ? categoryMap[item.category_id] || "未分类" : "未分类",
+            amount: `- ${formatCurrencyAmount(item.currency, parseAmount(item.amount), language)}`,
+            currency: item.currency,
+            note: item.note || item.merchant || "-",
+          }))
+        );
+
+        const total = res.total ?? res.data.length;
+        setPageCount(Math.max(1, Math.ceil(total / rowsPerPage)));
+      } catch (error: any) {
+        const message = error?.response?.data?.error?.message || error?.message || "加载消费列表失败";
+        enqueueSnackbar(message, { severity: "error" });
+      }
+    };
+
+    fetchExpenses();
+  }, [page, tableFilter.time, tableFilter.currency, tableFilter.keyword, selectedCategory, categoryMap, language, refreshKey]);
+
+  useEffect(() => {
+    const fetchMonthlySummary = async () => {
+      try {
+        const now = dayjs();
+        const currentFrom = now.startOf("month").startOf("day");
+        const currentTo = now.endOf("day");
+        const prevFrom = currentFrom.subtract(1, "month").startOf("month");
+        const prevTo = currentFrom.subtract(1, "day").endOf("day");
+
+        const [currentRes, prevRes] = await Promise.all([
+          listExpenses({
+            page: 1,
+            page_size: 200,
+            from: currentFrom.toISOString(),
+            to: currentTo.toISOString(),
+          }),
+          listExpenses({
+            page: 1,
+            page_size: 200,
+            from: prevFrom.toISOString(),
+            to: prevTo.toISOString(),
+          }),
+        ]);
+
+        setMonthExpenses(currentRes.data || []);
+        const prevTotal = (prevRes.data || []).reduce((sum, item) => sum + parseAmount(item.amount), 0);
+        setLastMonthTotal(prevTotal);
+      } catch (error) {
+        // silent for summary
+      }
+    };
+    fetchMonthlySummary();
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const fetchDailyStats = async () => {
+      try {
+        const periodKey = dailyPeriod === "7d" ? "week" : dailyPeriod;
+        const range = buildRange(periodKey);
+        if (!range.from || !range.to || !range.days) return;
+
+        const currentRes = await listExpenses({
+          page: 1,
+          page_size: 200,
+          from: range.from,
+          to: range.to,
+        });
+
+        const currentTotal = (currentRes.data || []).reduce((sum, item) => sum + parseAmount(item.amount), 0);
+        setDailyAverage(currentTotal / range.days);
+
+        const prevFrom = dayjs(range.from).subtract(range.days, "day").startOf("day");
+        const prevTo = dayjs(range.from).subtract(1, "day").endOf("day");
+        const prevRes = await listExpenses({
+          page: 1,
+          page_size: 200,
+          from: prevFrom.toISOString(),
+          to: prevTo.toISOString(),
+        });
+        const prevTotal = (prevRes.data || []).reduce((sum, item) => sum + parseAmount(item.amount), 0);
+        const rate = prevTotal === 0 ? 0 : (currentTotal - prevTotal) / prevTotal;
+        setDailyChangeRate(rate);
+      } catch (error) {
+        // silent for stats
+      }
+    };
+    fetchDailyStats();
+  }, [dailyPeriod, refreshKey]);
+
+  const handleOpenDialog = () => setDialogOpen(true);
+  const handleCloseDialog = () => setDialogOpen(false);
+
+  const handleCreateExpense = async (payload: Parameters<typeof createExpense>[0]) => {
+    await createExpense(payload);
+    setRefreshKey((prev) => prev + 1);
+    setPage(1);
+  };
+
   return (
-    <Box pt={4}>
+    <Box pt={6}>
       <Stack spacing={3}>
-        <Stack spacing={1}>
+        <Stack spacing={1} direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="h4" component="h1" style={{ fontWeight: 700 }}>
             消费管理
           </Typography>
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" color="primary" onClick={handleOpenDialog}>
+              快速记一笔
+            </Button>
+            <Button variant="contained" color="primary">
+              导出本月
+            </Button>
+          </Stack>
         </Stack>
-
-        <Stack spacing={1}>
-          <ButtonGroup variant="outlined" aria-label="outlined button group">
-            {timeOptions.map((option) => (
-              <Button
-                key={option.value}
-                variant={dailyPeriod === option.value ? 'contained' : 'outlined'}
-                onClick={() => setDailyPeriod(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </ButtonGroup>
-        </Stack>
-        
 
         <Grid container spacing={2}>
           <Grid item xs={12} sm={4}>
-            <MonthlySpendingCard amount={6820} lastMonthAmount={7200} />
+            <MonthlySpendingCard amount={monthlyTotal} lastMonthAmount={lastMonthTotal} />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TopCategoriesCard
-              title="主要分类"
-              barData={topCategoryData}
+            <DailySpendingCard
+              amount={dailyAverage}
+              selectPeriod={dailyPeriod}
+              changeRate={dailyChangeRate}
+              onPeriodChange={setDailyPeriod}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
-            <TopCategoriesCard
-              title="主要币种"
-              barData={topCurrencyData}
-            />
+            <TopCategoriesCard title="主要分类" barData={topCategoryData} />
           </Grid>
         </Grid>
 
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
-            <CategoryRatioCard
-              title="分类占比"
-              items={[
-                { label: '餐饮', percent: 38 },
-                { label: '居住', percent: 20 },
-                { label: '出行', percent: 10 },
-                { label: '购物', percent: 8 },
-                { label: '娱乐', percent: 6 },
-              ]}
-            />
+            <CategoryRatioCard title="分类占比" items={categoryRatioItems} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <CategoryRatioCard
-              title="币种占比"
-              items={[
-                { label: '美元', percent: 38 },
-                { label: '日元', percent: 20 },
-                { label: '港币', percent: 20 },
-                { label: '人民币', percent: 10 },
-              ]}
-            />
+            <CategoryRatioCard title="币种占比" items={currencyRatioItems} />
           </Grid>
         </Grid>
 
         <Grid container spacing={2}>
-          {/* 消费详情列表 */}
           <ExpenseDetailsCard
-            rows={pagedRows}
+            title="消费详情"
+            filters={tableFilters}
+            selectedFilters={tableFilter}
+            onFilterChange={handleFilterChange}
+            rows={rows}
             page={page}
             pageCount={pageCount}
-            onPageChange={(page: number) => setPage(page)}
-            title="消费详情"
-            filters={FilterItems}
-            selectedFilters={tableFilter}
-            onFilterChange={onTableFilterChange}
-            chips={
-              categoryOptions.map((category) => (
-                <Chip
-                  key={category}
-                  label={category}
-                  clickable
-                  variant={selectedCategory === category ? 'filled' : 'outlined'}
-                  color={selectedCategory === category ? 'primary' : 'default'}
-                  onClick={() => setSelectedCategory(category)}
-                />
-              ))
-            }
+            onPageChange={(value) => setPage(value)}
+            onDelete={handleDeleteRequest}
+            chips={categoryOptions.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                clickable
+                variant={selectedCategory === option.value ? "filled" : "outlined"}
+                color={selectedCategory === option.value ? "primary" : "default"}
+                onClick={() => {
+                  setSelectedCategory(option.value);
+                  setPage(1);
+                }}
+              />
+            ))}
           />
         </Grid>
       </Stack>
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title="确认删除"
+        description={`确认删除消费记录${confirmState.row ? `“${confirmState.row.note ?? ""}”` : ""}？`}
+        onCancel={handleCloseConfirm}
+        onConfirm={handleConfirmDelete}
+        confirmText="确认删除"
+        loading={deleting}
+      />
+      <ExpenseDialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        onSubmit={handleCreateExpense}
+        categories={categories}
+        currencyOptions={currencyOptions.filter((opt) => opt.value !== "all")}
+        defaultCurrency={defaultCurrency}
+      />
     </Box>
   );
 };
