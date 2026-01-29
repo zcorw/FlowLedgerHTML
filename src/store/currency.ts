@@ -5,7 +5,7 @@ import {
   ListCurrenciesParams,
   listCurrencies,
 } from '../api/currency';
-import useAuthStore, { selectIsAuthenticated } from './auth';
+import { setupAuthSubscription } from './storeUtils';
 
 type CurrencyState = {
   currencies: Currency[];
@@ -30,9 +30,7 @@ const useCurrencyStore = create<CurrencyState>((set, get) => ({
    * 拉取全部货币数据（会自动分页）。未登录时不会发起请求。
    */
   fetchCurrencies: async (force = false) => {
-    const isAuthenticated = selectIsAuthenticated(useAuthStore.getState());
     const { loading, initialized } = get();
-    if (!isAuthenticated) return;
     if (loading) return;
     if (initialized && !force) return;
 
@@ -65,22 +63,13 @@ const useCurrencyStore = create<CurrencyState>((set, get) => ({
   clear: () => set({ currencies: [], currencyMap: {}, loading: false, error: null, initialized: false }),
 }));
 
-// 自动根据登录状态拉取/清空货币数据
-const initialAuth = selectIsAuthenticated(useAuthStore.getState());
-if (initialAuth) {
-  void useCurrencyStore.getState().fetchCurrencies();
-}
-
-useAuthStore.subscribe((state, prev) => {
-  const store = useCurrencyStore.getState();
-  const isAuthed = selectIsAuthenticated(state);
-  const wasAuthed = selectIsAuthenticated(prev);
-  if (isAuthed && !wasAuthed) {
-    void store.fetchCurrencies(true);
-  }
-  if (!isAuthed && wasAuthed) {
-    store.clear();
-  }
+setupAuthSubscription({
+  onAuthenticated: (force) => {
+    void useCurrencyStore.getState().fetchCurrencies(force);
+  },
+  onUnauthenticated: () => {
+    useCurrencyStore.getState().clear();
+  },
 });
 
 export const selectCurrencies = (s: CurrencyState) => s.currencies;

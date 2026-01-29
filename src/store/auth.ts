@@ -79,4 +79,21 @@ export const formatAmount = (amount: number, preferences: Record<string, unknown
   }).format(amount);
 }; // 按当前偏好的货币单位格式化金额
 
+// 账号初始化后请求
+export async function fetchInitIsAuthenticated(fetchInit: (force?: boolean) => Promise<void>, clear: () => void) {
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  if (isAuthenticated) {
+    await fetchInit();
+  }
+  useAuthStore.subscribe((state, prev) => {
+    const isAuthed = selectIsAuthenticated(state);
+    const wasAuthed = selectIsAuthenticated(prev);
+    if (isAuthed && !wasAuthed) {
+      void fetchInit(true);
+    }
+    if (!isAuthed && wasAuthed) {
+      clear();
+    }
+  });
+}
 export default useAuthStore;

@@ -1,5 +1,6 @@
 ﻿import { Box, Button, Chip, Grid, Stack, Typography } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import type { ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import {
   MonthlySpendingCard,
@@ -12,18 +13,24 @@ import type { ExpenseRow } from "@/components/Cards/ExpenseDetailsCard";
 import type { FilterItem } from "@/components/Tables/TableFilter";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ExpenseDialog from "@/components/Dialogs/ExpenseDialog";
+import ExpenseReceiptDialog from "@/components/Dialogs/ExpenseReceiptDialog";
 import {
   createExpense,
+  createExpenseBatch,
   deleteExpense,
+  importExpenseReceipt,
   listCategories,
   listExpenses,
   type Category,
   type Expense,
+  type ExpenseCreate,
   type ExpenseList,
+  type ReceiptRecognitionResult,
 } from "@/api/expense";
 import useCurrencyStore, { selectCurrencies } from "@/store/currency";
 import useAuthStore, { selectPreferences } from "@/store/auth";
 import { enqueueSnackbar } from "@/store/snackbar";
+import useCategoryStore, { selectCategories } from "@/store/expenseCategory";
 
 const rowsPerPage = 6;
 
@@ -94,7 +101,6 @@ const ExpensesPage = () => {
   const [page, setPage] = useState(1);
   const [pageCount, setPageCount] = useState(1);
   const [rows, setRows] = useState<ExpenseRow[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [tableFilter, setTableFilter] = useState({
     time: "month",
@@ -107,13 +113,19 @@ const ExpensesPage = () => {
   const [dailyChangeRate, setDailyChangeRate] = useState(0);
   const [confirmState, setConfirmState] = useState<{ open: boolean; row?: ExpenseRow }>({ open: false });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [receiptItems, setReceiptItems] = useState<ReceiptRecognitionResult>({ merchant: "", occurred_at: "", items: [] });
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const receiptInputRef = useRef<HTMLInputElement | null>(null);
 
   const currencies = useCurrencyStore(selectCurrencies);
   const preferences = useAuthStore(selectPreferences);
   const language = preferences?.language as string | undefined;
   const defaultCurrency = preferences?.base_currency as string | undefined;
+
+  const categories = useCategoryStore(selectCategories);
 
   const categoryMap = useMemo(() => {
     return categories.reduce<Record<number, string>>((acc, item) => {
@@ -132,12 +144,10 @@ const ExpensesPage = () => {
   const currencyOptions = useMemo(() => {
     if (!currencies.length) {
       return [
-        { label: "全部", value: "all" },
-        { label: "CNY", value: "CNY" },
-        { label: "USD", value: "USD" },
+        { label: "全部", value: "all", scale: 0 },
       ];
     }
-    return [{ label: "全部", value: "all" }, ...currencies.map((c) => ({ label: c.code, value: c.code }))];
+    return [{ label: "全部", value: "all", scale: 0 }, ...currencies.map((c) => ({ label: c.code, value: c.code, scale: c.scale }))];
   }, [currencies]);
 
   const tableFilters = useMemo<FilterItem[]>(() => {
@@ -229,19 +239,6 @@ const ExpensesPage = () => {
     label: item.label,
     percent: Number(item.percent.toFixed(1)),
   }));
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await listCategories();
-        setCategories(res.data || []);
-      } catch (error: any) {
-        const message = error?.response?.data?.error?.message || error?.message || "分类加载失败";
-        enqueueSnackbar(message, { severity: "error" });
-      }
-    };
-    fetchCategories();
-  }, []);
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -362,8 +359,38 @@ const ExpensesPage = () => {
   const handleOpenDialog = () => setDialogOpen(true);
   const handleCloseDialog = () => setDialogOpen(false);
 
-  const handleCreateExpense = async (payload: Parameters<typeof createExpense>[0]) => {
+  const handleCreateExpense = async (payload: ExpenseCreate) => {
     await createExpense(payload);
+    setRefreshKey((prev) => prev + 1);
+    setPage(1);
+  };
+
+  const handleReceiptClick = () => {
+    receiptInputRef.current?.click();
+  };
+
+  const handleReceiptFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingReceipt(true);
+    try {
+      const result = await importExpenseReceipt(file);
+      console.log("🚀 ~ handleReceiptFile ~ result:", result)
+      setReceiptItems(result);
+      setReceiptDialogOpen(true);
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error?.message || "小票识别失败";
+      enqueueSnackbar(message, { severity: "error" });
+    } finally {
+      setUploadingReceipt(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleReceiptSubmit = async (items: ExpenseCreate[]) => {
+    await createExpenseBatch({ items });
+    setReceiptDialogOpen(false);
+    setReceiptItems({ merchant: "", occurred_at: "", items: [] });
     setRefreshKey((prev) => prev + 1);
     setPage(1);
   };
@@ -376,12 +403,22 @@ const ExpensesPage = () => {
             消费管理
           </Typography>
           <Stack direction="row" spacing={1}>
+            <Button variant="outlined" color="primary" onClick={handleReceiptClick} disabled={uploadingReceipt}>
+              {uploadingReceipt ? "识别中..." : "小票识别"}
+            </Button>
             <Button variant="outlined" color="primary" onClick={handleOpenDialog}>
               快速记一笔
             </Button>
             <Button variant="contained" color="primary">
               导出本月
             </Button>
+            <input
+              ref={receiptInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleReceiptFile}
+            />
           </Stack>
         </Stack>
 
@@ -403,10 +440,10 @@ const ExpensesPage = () => {
         </Grid>
 
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} lg={6}>
             <CategoryRatioCard title="分类占比" items={categoryRatioItems} />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} lg={6}>
             <CategoryRatioCard title="币种占比" items={currencyRatioItems} />
           </Grid>
         </Grid>
@@ -455,6 +492,15 @@ const ExpensesPage = () => {
         categories={categories}
         currencyOptions={currencyOptions.filter((opt) => opt.value !== "all")}
         defaultCurrency={defaultCurrency}
+      />
+      <ExpenseReceiptDialog
+        open={receiptDialogOpen}
+        onClose={() => setReceiptDialogOpen(false)}
+        items={receiptItems}
+        categories={categories}
+        currencyOptions={currencyOptions.filter((opt) => opt.value !== "all")}
+        defaultCurrency={defaultCurrency}
+        onSubmit={handleReceiptSubmit}
       />
     </Box>
   );
