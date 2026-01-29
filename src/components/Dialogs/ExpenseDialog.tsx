@@ -99,6 +99,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
     if (!validate()) return;
 
     const payload: ExpenseDialogPayload = {
+      name: form.note.trim() || form.merchant.trim() || "支出",
       amount: form.amount.trim(),
       currency: form.currency,
       category_id: form.categoryId ? Number(form.categoryId) : null,
