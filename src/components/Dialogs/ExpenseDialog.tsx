@@ -10,9 +10,11 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import InstitutionSelect from "../InstitutionSelect";
 import dayjs from "dayjs";
 import type { Category, ExpenseCreate } from "@/api/expense";
 import { enqueueSnackbar } from "@/store/snackbar";
+import { expenseSchema, type ExpenseFormValues } from "@/validation/expense";
 
 export type ExpenseDialogPayload = ExpenseCreate;
 
@@ -25,28 +27,21 @@ type Props = {
   defaultCurrency?: string;
 };
 
-type ExpenseForm = {
-  amount: string;
-  currency: string;
-  categoryId: string;
-  merchant: string;
-  occurredAt: string;
-  note: string;
-};
-
-const buildDefaultForm = (currency: string): ExpenseForm => ({
+const buildDefaultForm = (currency: string): ExpenseFormValues => ({
+  name: "",
   amount: "",
   currency,
   categoryId: "",
   merchant: "",
   occurredAt: dayjs().format("YYYY-MM-DD"),
   note: "",
+  paidAccountId: null,
 });
 
 const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, defaultCurrency }: Props) => {
   const fallbackCurrency = defaultCurrency || currencyOptions[0]?.value || "CNY";
-  const [form, setForm] = useState<ExpenseForm>(() => buildDefaultForm(fallbackCurrency));
-  const [errors, setErrors] = useState<Partial<Record<keyof ExpenseForm, string>>>({});
+  const [form, setForm] = useState<ExpenseFormValues>(() => buildDefaultForm(fallbackCurrency));
+  const [errors, setErrors] = useState<Partial<Record<keyof ExpenseFormValues, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -71,27 +66,34 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
     }
   };
 
-  const handleChange = (key: keyof ExpenseForm, value: string) => {
+  const handleChange = (key: keyof ExpenseFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
   const validate = () => {
-    const nextErrors: Partial<Record<keyof ExpenseForm, string>> = {};
-    if (!form.amount.trim()) {
-      nextErrors.amount = "请输入金额";
-    } else if (!/^\d+(\.\d{1,6})?$/.test(form.amount.trim())) {
-      nextErrors.amount = "金额格式不正确";
+    const parsed = expenseSchema.safeParse({
+      name: form.name.trim(),
+      amount: form.amount.trim(),
+      currency: form.currency,
+      categoryId: form.categoryId || undefined,
+      merchant: form.merchant || undefined,
+      occurredAt: form.occurredAt,
+      note: form.note || undefined,
+    });
+    if (!parsed.success) {
+      const nextErrors: Partial<Record<keyof ExpenseFormValues, string>> = {};
+      parsed.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof ExpenseFormValues;
+        if (!nextErrors[field]) {
+          nextErrors[field] = issue.message;
+        }
+      });
+      setErrors(nextErrors);
+      return false;
     }
-    if (!form.currency) {
-      nextErrors.currency = "请选择币种";
-    }
-    if (!form.occurredAt) {
-      nextErrors.occurredAt = "请选择时间";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    setErrors({});
+    return true;
   };
 
   const handleSave = async () => {
@@ -99,15 +101,15 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
     if (!validate()) return;
 
     const payload: ExpenseDialogPayload = {
-      name: form.note.trim() || form.merchant.trim() || "支出",
+      name: form.name.trim(),
       amount: form.amount.trim(),
       currency: form.currency,
       category_id: form.categoryId ? Number(form.categoryId) : null,
-      merchant: form.merchant.trim() || null,
-      paid_account_id: null,
+      merchant: form.merchant?.trim() || null,
+      paid_account_id: form.paidAccountId || null,
       occurred_at: dayjs(form.occurredAt).startOf("day").toISOString(),
       source_ref: null,
-      note: form.note.trim() || null,
+      note: form.note?.trim() || null,
     };
 
     setIsSaving(true);
@@ -129,6 +131,15 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
       <DialogContent dividers>
         <Stack spacing={2} pt={1}>
           <TextField
+            label="消费名称"
+            value={form.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            required
+            error={!!errors.name}
+            helperText={errors.name}
+            fullWidth
+          />
+          <TextField
             label="金额"
             value={form.amount}
             onChange={(e) => handleChange("amount", e.target.value)}
@@ -138,6 +149,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
             helperText={errors.amount}
             fullWidth
           />
+          <Stack direction="row" spacing={1} alignItems="center">
           <TextField
             label="币种"
             select
@@ -154,6 +166,8 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
               </MenuItem>
             ))}
           </TextField>
+          <InstitutionSelect value={form.paidAccountId} onChange={(id) => handleChange("paidAccountId", String(id))} />
+          </Stack>
           <TextField
             label="分类"
             select

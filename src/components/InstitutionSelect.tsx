@@ -3,7 +3,7 @@ import { Autocomplete, CircularProgress, TextField } from "@mui/material";
 import { listInstitutions, type Institution } from "@/api/deposits";
 
 type Props = {
-  value: number | null;
+  value: number | null | undefined;
   onChange: (id: number | null, institution?: Institution | null) => void;
   label?: string;
   required?: boolean;
