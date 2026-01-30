@@ -9,6 +9,7 @@ export const expenseSchema = z.object({
   occurredAt: z.string().min(1, '请选择时间'),
   note: z.string().optional().nullable(),
   paidAccountId: z.number().optional().nullable(),
+  fileId: z.number().optional().nullable(),
 });
 
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;

@@ -1,4 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
 import {
   Button,
   CircularProgress,
@@ -12,6 +13,7 @@ import {
 } from "@mui/material";
 import InstitutionSelect from "../InstitutionSelect";
 import dayjs from "dayjs";
+import { importExpenseReceipt } from "@/api/expense";
 import type { Category, ExpenseCreate } from "@/api/expense";
 import { enqueueSnackbar } from "@/store/snackbar";
 import { expenseSchema, type ExpenseFormValues } from "@/validation/expense";
@@ -36,6 +38,7 @@ const buildDefaultForm = (currency: string): ExpenseFormValues => ({
   occurredAt: dayjs().format("YYYY-MM-DD"),
   note: "",
   paidAccountId: null,
+  fileId: null,
 });
 
 const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, defaultCurrency }: Props) => {
@@ -43,7 +46,9 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
   const [form, setForm] = useState<ExpenseFormValues>(() => buildDefaultForm(fallbackCurrency));
   const [errors, setErrors] = useState<Partial<Record<keyof ExpenseFormValues, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const dateInputRef = useRef<HTMLInputElement | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement | null>(null);
 
   const categoryItems = useMemo(
     () => [{ label: "未分类", value: "" }, ...categories.map((item) => ({ label: item.name, value: String(item.id) }))],
@@ -110,6 +115,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
       occurred_at: dayjs(form.occurredAt).startOf("day").toISOString(),
       source_ref: null,
       note: form.note?.trim() || null,
+      file_id: form.fileId || null,
     };
 
     setIsSaving(true);
@@ -125,9 +131,49 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
     }
   };
 
+  const handleReceiptClick = () => {
+    receiptInputRef.current?.click();
+  };
+
+  const handleReceiptFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingReceipt(true);
+    try {
+      const {data: result, file_id } = await importExpenseReceipt(file);
+      setForm((prev) => ({ 
+        ...prev, 
+        name: result.name,
+        amount: String(result.amount),
+        merchant: result.merchant,
+        occurredAt: dayjs(result.occurred_at).format("YYYY-MM-DD"),
+        categoryId: String(categories.find((category) => category.name === result.type)?.id || ""),
+        fileId: file_id,
+      }));
+    } catch (error: any) {
+      const message = error?.response?.data?.error?.message || error?.message || "小票识别失败";
+      enqueueSnackbar(message, { severity: "error" });
+    } finally {
+      setUploadingReceipt(false);
+      event.target.value = "";
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>添加消费记录</DialogTitle>
+      <DialogTitle>
+        <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+          <span>添加消费记录</span>
+          <Button onClick={handleReceiptClick} disabled={uploadingReceipt}>{ uploadingReceipt ? "识别中..." : "识别小票" }</Button>
+          <input
+            ref={receiptInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleReceiptFile}
+          />
+        </Stack>
+      </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} pt={1}>
           <TextField

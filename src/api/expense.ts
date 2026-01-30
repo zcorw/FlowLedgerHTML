@@ -11,6 +11,7 @@ export type Expense = {
   occurred_at: string; // ISO date-time
   source_ref: string | null;
   note: string | null;
+  file_id: number | null;
 };
 
 export type ExpenseCreate = Omit<Expense, 'id'>;
@@ -65,6 +66,7 @@ export type ExpenseBatchCreateResult = {
 
 export type ReceiptImportTaskCreateResponse = {
   task_id: string;
+  file_id: number;
 };
 
 export type ReceiptImportTaskStatus<T = unknown> = {
@@ -81,16 +83,18 @@ export type ReceiptImportTaskStatus<T = unknown> = {
   updated_at?: string;
 };
 
-export type ReceiptRecognitionItem = {
-  name: string;
-  amount: number;
-  type: string;
-}
 export type ReceiptRecognitionResult = {
   merchant: string;
   occurred_at: string; // "YYYY-MM-DD HH:mm"
-  items: ReceiptRecognitionItem[];
+  name: string;
+  amount: number;
+  type: string;
 };
+
+export type ReceiptImportResult = {
+  file_id: number;
+  data: ReceiptRecognitionResult;
+}
 
 const IMPORT_POLL_INTERVAL_MS = 1500;
 const IMPORT_POLL_TIMEOUT_MS = 10 * 60 * 1000;
@@ -198,17 +202,20 @@ export async function createCategory(payload: CategoryCreate, idempotencyKey?: s
  * POST /import/expense/receipt
  * Response: ReceiptImportTaskCreateResponse
  */
-export async function importExpenseReceipt(file: File | Blob) {
+export async function importExpenseReceipt(file: File | Blob): Promise<ReceiptImportResult> {
   const formData = new FormData();
   formData.append('file', file);
-  const { task_id } = await post<ReceiptImportTaskCreateResponse>('/import/expense/receipt', formData);
+  const { task_id, file_id } = await post<ReceiptImportTaskCreateResponse>('/import/expense/receipt', formData);
   const status = await pollReceiptTask<ReceiptRecognitionResult>(task_id, (id) =>
     get<ReceiptImportTaskStatus<ReceiptRecognitionResult>>(`/import/expense/receipt/tasks/${id}`),
   );
   if (!status.result) {
     throw new Error('识别完成但未返回结果');
   }
-  return status.result;
+  return {
+    file_id: file_id,
+    data: status.result,
+  };
 }
 
 /**

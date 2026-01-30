@@ -1,5 +1,4 @@
 ﻿import { Box, Button, Chip, Grid, Stack, Typography } from "@mui/material";
-import type { ChangeEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import {
@@ -13,19 +12,13 @@ import type { ExpenseRow } from "@/components/Cards/ExpenseDetailsCard";
 import type { FilterItem } from "@/components/Tables/TableFilter";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ExpenseDialog from "@/components/Dialogs/ExpenseDialog";
-import ExpenseReceiptDialog from "@/components/Dialogs/ExpenseReceiptDialog";
 import {
   createExpense,
-  createExpenseBatch,
   deleteExpense,
-  importExpenseReceipt,
-  listCategories,
   listExpenses,
-  type Category,
   type Expense,
   type ExpenseCreate,
   type ExpenseList,
-  type ReceiptRecognitionResult,
 } from "@/api/expense";
 import { getExpenseTotalCompare } from "@/api/custom";
 import useCurrencyStore, { selectCurrencies } from "@/store/currency";
@@ -139,12 +132,8 @@ const ExpensesPage = () => {
   const [dailyChangeRate, setDailyChangeRate] = useState(0);
   const [confirmState, setConfirmState] = useState<{ open: boolean; row?: ExpenseRow }>({ open: false });
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
-  const [receiptItems, setReceiptItems] = useState<ReceiptRecognitionResult>({ merchant: "", occurred_at: "", items: [] });
-  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const receiptInputRef = useRef<HTMLInputElement | null>(null);
 
   const currencies = useCurrencyStore(selectCurrencies);
   const preferences = useAuthStore(selectPreferences);
@@ -373,36 +362,6 @@ const ExpensesPage = () => {
     setPage(1);
   };
 
-  const handleReceiptClick = () => {
-    receiptInputRef.current?.click();
-  };
-
-  const handleReceiptFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setUploadingReceipt(true);
-    try {
-      const result = await importExpenseReceipt(file);
-      console.log("🚀 ~ handleReceiptFile ~ result:", result)
-      setReceiptItems(result);
-      setReceiptDialogOpen(true);
-    } catch (error: any) {
-      const message = error?.response?.data?.error?.message || error?.message || "小票识别失败";
-      enqueueSnackbar(message, { severity: "error" });
-    } finally {
-      setUploadingReceipt(false);
-      event.target.value = "";
-    }
-  };
-
-  const handleReceiptSubmit = async (items: ExpenseCreate[]) => {
-    await createExpenseBatch({ items });
-    setReceiptDialogOpen(false);
-    setReceiptItems({ merchant: "", occurred_at: "", items: [] });
-    setRefreshKey((prev) => prev + 1);
-    setPage(1);
-  };
-
   return (
     <Box pt={6}>
       <Stack spacing={3}>
@@ -411,22 +370,12 @@ const ExpensesPage = () => {
             消费管理
           </Typography>
           <Stack direction="row" spacing={1}>
-            <Button variant="outlined" color="primary" onClick={handleReceiptClick} disabled={uploadingReceipt}>
-              {uploadingReceipt ? "识别中..." : "小票识别"}
-            </Button>
             <Button variant="outlined" color="primary" onClick={handleOpenDialog}>
               快速记一笔
             </Button>
             <Button variant="contained" color="primary">
               导出本月
             </Button>
-            <input
-              ref={receiptInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleReceiptFile}
-            />
           </Stack>
         </Stack>
 
@@ -500,15 +449,6 @@ const ExpensesPage = () => {
         categories={categories}
         currencyOptions={currencyOptions.filter((opt) => opt.value !== "all")}
         defaultCurrency={defaultCurrency}
-      />
-      <ExpenseReceiptDialog
-        open={receiptDialogOpen}
-        onClose={() => setReceiptDialogOpen(false)}
-        items={receiptItems}
-        categories={categories}
-        currencyOptions={currencyOptions.filter((opt) => opt.value !== "all")}
-        defaultCurrency={defaultCurrency}
-        onSubmit={handleReceiptSubmit}
       />
     </Box>
   );
