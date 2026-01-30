@@ -27,6 +27,7 @@ import {
   type ExpenseList,
   type ReceiptRecognitionResult,
 } from "@/api/expense";
+import { getExpenseTotalCompare } from "@/api/custom";
 import useCurrencyStore, { selectCurrencies } from "@/store/currency";
 import useAuthStore, { selectPreferences } from "@/store/auth";
 import { enqueueSnackbar } from "@/store/snackbar";
@@ -67,6 +68,12 @@ const parseAmount = (amount: string | null | undefined) => {
   return Number.isFinite(value) ? Math.abs(value) : 0;
 };
 
+const parseDecimal = (amount: string | null | undefined) => {
+  if (!amount) return 0;
+  const value = Number(amount);
+  return Number.isFinite(value) ? value : 0;
+};
+
 const buildRange = (period: string) => {
   const now = dayjs();
   if (period === "all") {
@@ -86,6 +93,24 @@ const buildRange = (period: string) => {
   }
   const from = now.subtract(6, "day");
   return { from: from.startOf("day").toISOString(), to: now.endOf("day").toISOString(), days: 7 };
+};
+
+const buildDateRange = (period: string) => {
+  const now = dayjs();
+  if (period === "month") {
+    const from = now.startOf("month");
+    return {
+      from: from.format("YYYY-MM-DD"),
+      to: now.format("YYYY-MM-DD"),
+      days: now.diff(from, "day") + 1,
+    };
+  }
+  if (period === "30d") {
+    const from = now.subtract(29, "day");
+    return { from: from.format("YYYY-MM-DD"), to: now.format("YYYY-MM-DD"), days: 30 };
+  }
+  const from = now.subtract(6, "day");
+  return { from: from.format("YYYY-MM-DD"), to: now.format("YYYY-MM-DD"), days: 7 };
 };
 
 const formatCurrencyAmount = (currency: string, amount: number, language?: string) => {
@@ -108,6 +133,7 @@ const ExpensesPage = () => {
     keyword: "",
   });
   const [monthExpenses, setMonthExpenses] = useState<Expense[]>([]);
+  const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [lastMonthTotal, setLastMonthTotal] = useState(0);
   const [dailyAverage, setDailyAverage] = useState(0);
   const [dailyChangeRate, setDailyChangeRate] = useState(0);
@@ -225,7 +251,6 @@ const ExpensesPage = () => {
     };
   }, [monthExpenses, categoryMap]);
 
-  const monthlyTotal = summaryStats.total;
   const topCategoryData = summaryStats.categoryRatios.slice(0, 3).map((item) => ({
     label: item.label,
     percent: item.percent,
@@ -291,29 +316,25 @@ const ExpensesPage = () => {
     const fetchMonthlySummary = async () => {
       try {
         const now = dayjs();
-        const currentFrom = now.startOf("month").startOf("day");
-        const currentTo = now.endOf("day");
-        const prevFrom = currentFrom.subtract(1, "month").startOf("month");
-        const prevTo = currentFrom.subtract(1, "day").endOf("day");
+        const currentFrom = now.startOf("month");
+        const currentTo = now;
 
-        const [currentRes, prevRes] = await Promise.all([
+        const [currentRes, compareRes] = await Promise.all([
           listExpenses({
             page: 1,
             page_size: 200,
-            from: currentFrom.toISOString(),
-            to: currentTo.toISOString(),
+            from: currentFrom.startOf("day").toISOString(),
+            to: currentTo.endOf("day").toISOString(),
           }),
-          listExpenses({
-            page: 1,
-            page_size: 200,
-            from: prevFrom.toISOString(),
-            to: prevTo.toISOString(),
+          getExpenseTotalCompare({
+            from: currentFrom.format("YYYY-MM-DD"),
+            to: currentTo.format("YYYY-MM-DD"),
           }),
         ]);
 
         setMonthExpenses(currentRes.data || []);
-        const prevTotal = (prevRes.data || []).reduce((sum, item) => sum + parseAmount(item.amount), 0);
-        setLastMonthTotal(prevTotal);
+        setMonthlyTotal(parseDecimal(compareRes.current_total));
+        setLastMonthTotal(parseDecimal(compareRes.previous_total));
       } catch (error) {
         // silent for summary
       }
@@ -325,30 +346,17 @@ const ExpensesPage = () => {
     const fetchDailyStats = async () => {
       try {
         const periodKey = dailyPeriod === "7d" ? "week" : dailyPeriod;
-        const range = buildRange(periodKey);
+        const range = buildDateRange(periodKey);
         if (!range.from || !range.to || !range.days) return;
 
-        const currentRes = await listExpenses({
-          page: 1,
-          page_size: 200,
+        const compareRes = await getExpenseTotalCompare({
           from: range.from,
           to: range.to,
         });
 
-        const currentTotal = (currentRes.data || []).reduce((sum, item) => sum + parseAmount(item.amount), 0);
+        const currentTotal = parseDecimal(compareRes.current_total);
         setDailyAverage(currentTotal / range.days);
-
-        const prevFrom = dayjs(range.from).subtract(range.days, "day").startOf("day");
-        const prevTo = dayjs(range.from).subtract(1, "day").endOf("day");
-        const prevRes = await listExpenses({
-          page: 1,
-          page_size: 200,
-          from: prevFrom.toISOString(),
-          to: prevTo.toISOString(),
-        });
-        const prevTotal = (prevRes.data || []).reduce((sum, item) => sum + parseAmount(item.amount), 0);
-        const rate = prevTotal === 0 ? 0 : (currentTotal - prevTotal) / prevTotal;
-        setDailyChangeRate(rate);
+        setDailyChangeRate(parseDecimal(compareRes.delta_rate));
       } catch (error) {
         // silent for stats
       }

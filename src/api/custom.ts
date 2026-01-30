@@ -62,6 +62,23 @@ export type AssetCurrencyResponse = {
   data: CurrencyAssetItem[]
 }
 
+export type ExpenseTotalCompareParams = {
+  from: string; // YYYY-MM-DD
+  to: string; // YYYY-MM-DD
+};
+
+export type ExpenseTotalCompareResult = {
+  currency: string;
+  current_from: string; // ISO date-time
+  current_to: string; // ISO date-time
+  current_total: string; // decimal string
+  previous_from: string; // ISO date-time
+  previous_to: string; // ISO date-time
+  previous_total: string; // decimal string
+  delta: string; // decimal string, may be negative
+  delta_rate: string; // decimal string, may be negative
+};
+
 /**
  * List monthly asset history within a date range.
  */
@@ -105,4 +122,13 @@ export async function monthlyAssetChange(): Promise<LatestTotalAssetList> {
  */
 export async function listAssetTotalByCurrency() {
   return get<AssetCurrencyResponse>('/custom/total/assets/currency');
+}
+
+/**
+ * Compare total expenses between current and previous periods.
+ * GET /custom/expenses/total/compare
+ * Response: ExpenseTotalCompareResult
+ */
+export async function getExpenseTotalCompare(params: ExpenseTotalCompareParams) {
+  return get<ExpenseTotalCompareResult>('/custom/expenses/total/compare', { params });
 }
