@@ -5,6 +5,7 @@ import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
 import ExpensesPage from '@/pages/Expenses';
 import Deposits from '@/pages/Deposits';
+import SchedulerPage from '@/pages/Scheduler';
 import useAuthStore, { selectIsAuthenticated } from '@/store/auth';
 
 const RequireAuth = () => {
@@ -42,6 +43,7 @@ const AppRoutes = () => (
       <Route path="/" element={<DashboardPage />} />
       <Route path="/expenses" element={<ExpensesPage />} />
       <Route path="/deposits" element={<Deposits />} />
+      <Route path="/scheduler" element={<SchedulerPage />} />
     </Route>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />

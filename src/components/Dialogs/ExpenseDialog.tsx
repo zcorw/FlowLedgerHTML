@@ -17,6 +17,7 @@ import { importExpenseReceipt } from "@/api/expense";
 import type { Category, ExpenseCreate } from "@/api/expense";
 import { enqueueSnackbar } from "@/store/snackbar";
 import { expenseSchema, type ExpenseFormValues } from "@/validation/expense";
+import useDatePicker from "@/hooks/useDatePicker";
 
 export type ExpenseDialogPayload = ExpenseCreate;
 
@@ -47,8 +48,8 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
   const [errors, setErrors] = useState<Partial<Record<keyof ExpenseFormValues, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
-  const dateInputRef = useRef<HTMLInputElement | null>(null);
   const receiptInputRef = useRef<HTMLInputElement | null>(null);
+  const [dateInputRef, openDatePicker] = useDatePicker();
 
   const categoryItems = useMemo(
     () => [{ label: "未分类", value: "" }, ...categories.map((item) => ({ label: item.name, value: String(item.id) }))],
@@ -62,14 +63,6 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
       setIsSaving(false);
     }
   }, [open, fallbackCurrency]);
-
-  const openDatePicker = () => {
-    const el = dateInputRef.current;
-    if (!el) return;
-    if (typeof el.showPicker === "function") {
-      el.showPicker();
-    }
-  };
 
   const handleChange = (key: keyof ExpenseFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

@@ -13,6 +13,7 @@ const navItems: NavItem[] = [
   { label: '仪表盘', href: '/' },
   { label: '消费管理', href: '/expenses' },
   { label: '存款管理', href: '/deposits' },
+  { label: '任务管理', href: '/scheduler' },
 ];
 
 const SiteHeader = ({ actions }: Props) => {
