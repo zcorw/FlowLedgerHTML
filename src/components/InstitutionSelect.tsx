@@ -30,7 +30,7 @@ const InstitutionSelect = ({
   const [inputValue, setInputValue] = useState("");
 
   const selectedOption = useMemo(
-    () => options.find((item) => item.id === value) ?? null,
+    () => options.find((item) => item.id == value) ?? null,
     [options, value],
   );
 
@@ -70,7 +70,7 @@ const InstitutionSelect = ({
       fullWidth
       filterOptions={(items) => items}
       getOptionLabel={(option) => option.name}
-      isOptionEqualToValue={(option, value) => option.id === value.id}
+      isOptionEqualToValue={(option, value) => option.id == value.id}
       onChange={(_, option) => onChange(option?.id ?? null, option ?? null)}
       inputValue={inputValue}
       onInputChange={(_, nextInput) => setInputValue(nextInput)}
