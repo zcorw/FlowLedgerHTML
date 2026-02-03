@@ -7,6 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Stack,
   TextField,
 } from '@mui/material';
@@ -46,9 +47,26 @@ const SchedulerJobDialog = ({ open, onClose, onSubmit, initialValues, title }: P
   const [form, setForm] = useState<SchedulerJobFormValues>(() => buildDefaultForm(initialValues));
   const [errors, setErrors] = useState<Partial<Record<keyof SchedulerJobFormValues, string>>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [schedulerType, setSchedulerType] = useState('Cron');
   const [dateInputRef, openDatePicker] = useDatePicker();
 
   const resolvedTitle = useMemo(() => title ?? (initialValues ? '编辑任务' : '创建任务'), [title, initialValues]);
+  const schedulerRulePlaceholder = useMemo(() => {
+    switch (schedulerType) {
+      case 'Cron':
+        return '如：0 9 1 * *（分 时 日 月 周）';
+      default:
+        return '';
+    }
+  }, [schedulerType]);
+  const schedulerValue = useMemo(() => {
+    switch (schedulerType) {
+      case 'Cron':
+        return form.rule.replace(/^cron:\s*/, '');
+      default:
+        return form.rule;
+    }
+  }, [schedulerType, form.rule]);
 
   useEffect(() => {
     if (open) {
@@ -87,6 +105,16 @@ const SchedulerJobDialog = ({ open, onClose, onSubmit, initialValues, title }: P
     setErrors({});
     return true;
   };
+
+  function setSchedulerRule(rule: string) {
+    switch (schedulerType) {
+      case 'Cron':
+        handleChange('rule', "cron: " + rule);
+        break;
+      default:
+        handleChange('rule', rule);
+    }
+  }
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -139,15 +167,31 @@ const SchedulerJobDialog = ({ open, onClose, onSubmit, initialValues, title }: P
             multiline
             minRows={2}
           />
-          <TextField
-            label="规则"
-            value={form.rule}
-            onChange={(e) => handleChange('rule', e.target.value)}
-            required
-            error={!!errors.rule}
-            helperText={errors.rule}
-            fullWidth
-          />
+          <Stack direction="row" spacing={2}>
+            <Stack flex={1}>
+              <TextField
+                label="规则解析器"
+                value={schedulerType}
+                onChange={(e) => setSchedulerType(e.target.value)}
+                select
+                fullWidth
+              >
+                <MenuItem value="Cron">Cron</MenuItem>
+              </TextField>
+            </Stack>
+            <Stack flex={3}>
+              <TextField
+                label="规则"
+                value={schedulerValue}
+                onChange={(e) => setSchedulerRule(e.target.value)}
+                required
+                error={!!errors.rule}
+                helperText={errors.rule}
+                placeholder={schedulerRulePlaceholder}
+                fullWidth
+              />
+            </Stack>
+          </Stack>
           <TextField
             label="首次执行时间"
             type="datetime-local"
