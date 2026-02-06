@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   Box,
   Button,
@@ -10,26 +10,34 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { requestPasswordReset } from '@/api/auth';
 import { enqueueSnackbar } from '@/store/snackbar';
+import { ForgotPasswordFormValues, ForgotPasswordSchema } from '@/validation/auth';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Partial<Record<keyof ForgotPasswordFormValues, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const value = email.trim();
-    if (!value) {
-      setError('请输入邮箱');
+    const parsed = ForgotPasswordSchema.safeParse({ email: email.trim() });
+    if (!parsed.success) {
+      const nextErrors: typeof errors = {};
+      parsed.error.issues.forEach((issue: z.ZodIssue) => {
+        const path = issue.path[0] as keyof ForgotPasswordFormValues;
+        nextErrors[path] = issue.message;
+      });
+      setErrors(nextErrors);
       return;
     }
-    setError('');
+
+    setErrors({});
     setSubmitting(true);
-    requestPasswordReset(value)
+    requestPasswordReset(parsed.data.email)
       .then(() => {
         enqueueSnackbar('邮件发送成功，请检查邮箱中的重置链接', { severity: 'success' });
         navigate('/login', { replace: true });
@@ -63,17 +71,17 @@ const ForgotPasswordPage = () => {
 
           <form onSubmit={handleSubmit}>
             <Stack spacing={2}>
-              <FormControl fullWidth error={Boolean(error)}>
+              <FormControl fullWidth error={Boolean(errors.email)}>
                 <TextField
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="输入注册时绑定的邮箱"
+                  placeholder="hi@flow-ledger.io"
                   disabled={submitting}
                   fullWidth
                   variant="outlined"
                   label="邮箱"
                 />
-                <FormHelperText>{error || '用于接收重置密码邮件'}</FormHelperText>
+                <FormHelperText>{errors.email || '用于接收重置密码邮件'}</FormHelperText>
               </FormControl>
 
               <Button type="submit" variant="contained" color="primary" fullWidth size="large" disabled={submitting}>
