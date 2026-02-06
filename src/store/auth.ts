@@ -1,8 +1,8 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { tokenStorage } from '../api/client';
+import tokenStorage from '@/api/tokenStorage';
 
-// 鉴权状态结构
+// 权限状态结构
 type AuthState = {
   token: string | null; // access_token
   user: Record<string, unknown> | null; // 当前用户信息
@@ -67,7 +67,6 @@ export const selectIsAuthenticated = (s: AuthState) => Boolean(s.token); // 是�
 export const selectUser = (s: AuthState) => s.user; // 当前用户
 export const selectPreferences = (s: AuthState) => s.preferences; // 当前偏好
 
-
 export const formatAmount = (amount: number, preferences: Record<string, unknown> | null) => {
   const currency = preferences?.base_currency as string | undefined;
   const language = preferences?.language as string | undefined;
@@ -96,4 +95,5 @@ export async function fetchInitIsAuthenticated(fetchInit: (force?: boolean) => P
     }
   });
 }
+
 export default useAuthStore;

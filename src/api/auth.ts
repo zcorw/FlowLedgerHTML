@@ -1,4 +1,4 @@
-import { del, get, patch, post, tokenStorage } from './client';
+import { del, get, patch, post } from './client';
 import useAuthStore from '../store/auth';
 
 export type AuthResponse = {
