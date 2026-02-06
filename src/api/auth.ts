@@ -26,6 +26,32 @@ export type LinkTelegramPayload = {
   link_token?: string;
 };
 
+export async function verifyEmail(token: string) {
+  const res = await get<AuthResponse>('/auth/verify-email', {
+    params: { token },
+  });
+  useAuthStore.getState().setSession({
+    token: res.access_token,
+    user: res.user,
+    preferences: (res as any).preferences ?? null,
+    expiresInSeconds: res.expires_in,
+  });
+  return res;
+}
+
+export function confirmPasswordReset(token: string, password: string) {
+  return post<Record<string, unknown>>('/auth/password-reset/confirm', {
+    token,
+    password,
+  });
+}
+
+export function requestPasswordReset(email: string) {
+  return post<Record<string, unknown>>('/auth/password-reset', {
+    email,
+  });
+}
+
 export async function register(payload: RegisterPayload) {
   const res = await post<AuthResponse>('/auth/register', payload);
   useAuthStore.getState().setSession({

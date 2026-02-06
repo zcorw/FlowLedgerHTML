@@ -100,7 +100,7 @@ const AuthPage = () => {
                 </FormControl>
 
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <MuiLink href="#" underline="hover" sx={{ fontSize: 14 }}>
+                  <MuiLink href="/forgot-password" underline="hover" sx={{ fontSize: 14 }}>
                     忘记密码
                   </MuiLink>
                   <MuiLink href="/register" underline="hover" sx={{ fontSize: 14 }}>

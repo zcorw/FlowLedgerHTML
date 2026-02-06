@@ -3,6 +3,9 @@ import { Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router
 import DashboardPage from '@/pages/dashboard';
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
+import VerifyEmailPage from '@/pages/VerifyEmail';
+import ResetPasswordPage from '@/pages/ResetPassword';
+import ForgotPasswordPage from '@/pages/ForgotPassword';
 import ExpensesPage from '@/pages/Expenses';
 import Deposits from '@/pages/Deposits';
 import SchedulerPage from '@/pages/Scheduler';
@@ -47,6 +50,9 @@ const AppRoutes = () => (
     </Route>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
+    <Route path="/verify-email" element={<VerifyEmailPage />} />
+    <Route path="/reset-password" element={<ResetPasswordPage />} />
+    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
     <Route path="*" element={<PlaceholderPage title="未找到页面" description="请返回仪表盘查看主要数据。" />} />
   </Routes>
 );
