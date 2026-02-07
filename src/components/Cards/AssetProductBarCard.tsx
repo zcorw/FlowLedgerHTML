@@ -1,20 +1,19 @@
 import { useMemo } from 'react';
-import useCurrencyStore, { selectCurrencyMap } from '@/store/currency';
 import type { CurrencyAssetItem } from '@/api/custom';
 import AssetCompareBarCard from './AssetCompareBarCard';
+import { AssetTypes } from '@/validation/deposit';
 
 type AssetCurrencyBarCardProps = {
   data: CurrencyAssetItem[];
 };
 
-const AssetCurrencyBarCard = (props: AssetCurrencyBarCardProps) => {
+const AssetProductBarCard = (props: AssetCurrencyBarCardProps) => {
   const { data } = props;
-  const currencyMap = useCurrencyStore(selectCurrencyMap);
 
   const chartData = useMemo(
     () =>
       data.map((item) => ({
-        name: currencyMap[item.target].name,
+        name: AssetTypes.find((it) => it.value === item.target)?.label || item.target,
         current: item.amount,
         previous: item.amount - item.change,
         change: item.change,
@@ -24,10 +23,11 @@ const AssetCurrencyBarCard = (props: AssetCurrencyBarCardProps) => {
 
   return (
     <AssetCompareBarCard
-      title="币种资产对比"
+      title="资产类型对比"
       data={chartData}
+      colors={['#5b8fb9', '#7f9c8d']}
     />
   );
 };
 
-export default AssetCurrencyBarCard;
+export default AssetProductBarCard;

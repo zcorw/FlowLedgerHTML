@@ -83,6 +83,7 @@ const AuthPage = () => {
                     placeholder="yourname"
                     fullWidth
                     variant="outlined"
+                    label="用户名"
                   />
                   <FormHelperText>{errors.username}</FormHelperText>
                 </FormControl>
@@ -95,6 +96,7 @@ const AuthPage = () => {
                     placeholder="至少 8 位，推荐 12 位复杂密码"
                     fullWidth
                     variant="outlined"
+                    label="密码"
                   />
                   <FormHelperText>{errors.password}</FormHelperText>
                 </FormControl>

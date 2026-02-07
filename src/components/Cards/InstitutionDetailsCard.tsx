@@ -3,6 +3,7 @@ import { Table, Filter } from '../Tables';
 import type { FilterItem } from '../Tables/TableFilter';
 import StatusBadge from '../StatusBadge';
 import type { ReactNode } from 'react';
+import {InstitutionTypes} from "@/validation/deposit";
 
 export type InstitutionRow = {
   id: number;
@@ -29,10 +30,8 @@ export type InstitutionDetailsCardProps = {
 };
 
 const renderType = (type: string) => {
-  if (type === 'bank') return '银行';
-  if (type === 'broker') return '券商';
-  if (type === 'other') return '其他';
-  return type;
+  const item = InstitutionTypes.find((it) => it.value === type);
+  return item ? item.label : type;
 };
 
 const InstitutionDetailsCard = (_props: InstitutionDetailsCardProps) => {

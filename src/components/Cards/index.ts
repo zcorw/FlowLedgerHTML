@@ -13,3 +13,4 @@ export { default as InstitutionDetailsCard } from './InstitutionDetailsCard';
 export { default as InstitutionAssetChangeCard } from './InstitutionAssetChangeCard';
 export { default as AssetCurrencyCard } from './AssetCurrencyCard';
 export { default as AssetCurrencyBarCard } from './AssetCurrencyBarCard';
+export { default as AssetProductBarCard } from './AssetProductBarCard';

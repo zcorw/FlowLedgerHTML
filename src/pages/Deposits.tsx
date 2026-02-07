@@ -9,6 +9,7 @@ import {
   InstitutionDetailsCard,
   AssetCurrencyCard,
   AssetCurrencyBarCard,
+  AssetProductBarCard,
 } from "@/components/Cards";
 import DepositDialog, { type DepositSubmitPayload } from "@/components/Dialogs/DepositDialog";
 import {
@@ -40,8 +41,9 @@ import useAuthStore, { selectPreferences } from "@/store/auth";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import BalanceBulkDrawer, { type BalanceBulkDrawerProps } from "@/components/Drawers/BalanceBulkDrawer";
 import AssetBalanceSnapshotDrawer from "@/components/Drawers/AssetBalanceSnapshotDrawer";
-import { listAssetTotalByCurrency, type CurrencyAssetItem } from "@/api/custom";
-import type { AssetCurrencyCardProps } from "@/components/Cards/AssetCurrencyCard"
+import { listAssetTotalByCurrency, listAssetTotalByProduct, type CurrencyAssetItem } from "@/api/custom";
+import type { AssetCurrencyCardProps } from "@/components/Cards/AssetCurrencyCard";
+import { AssetTypes, InstitutionTypes } from "@/validation/deposit";
 
 const tabs = [
   { label: "资产", value: "asset" },
@@ -57,9 +59,7 @@ const filterItems: FilterItem[] = [
     type: "menu",
     options: [
       { label: "全部", value: "all" },
-      { label: "存款", value: "deposit" },
-      { label: "理财/投资", value: "investment" },
-      { label: "券商/证券", value: "securities" },
+      ...AssetTypes
     ],
   },
   {
@@ -76,9 +76,7 @@ const institutionFilterItems: FilterItem[] = [
     type: "menu",
     options: [
       { label: "全部", value: "all" },
-      { label: "银行", value: "bank" },
-      { label: "券商", value: "broker" },
-      { label: "其他", value: "other" },
+      ...InstitutionTypes
     ],
   },
   {
@@ -136,6 +134,7 @@ const DepositsPage = () => {
     asset?: AssetRow;
   }>({ open: false });
   const [currencySummary, setCurrencySummary] = useState<CurrencyAssetItem[]>([]);
+  const [productSummary, setProductSummary] = useState<CurrencyAssetItem[]>([]);
 
   const currencyMap = useCurrencyStore(selectCurrencies);
 
@@ -144,7 +143,7 @@ const DepositsPage = () => {
   const localCurrencyProps = useMemo<AssetCurrencyCardProps>(() => {
     const currency = preferences?.base_currency as string | undefined;
     if (!currency) return {} as AssetCurrencyCardProps;
-    const item = currencySummary.filter((item) => item.currency === currency)[0];
+    const item = currencySummary.filter((item) => item.target === currency)[0];
     const amount = item?.amount || 0;
     const change = item?.change || 0;
     const rate = item?.rate || 0;
@@ -158,7 +157,7 @@ const DepositsPage = () => {
     let change = 0;
     let rate = 0;
     for (const item of currencySummary) {
-      if (item.currency !== currency) {
+      if (item.target !== currency) {
         amount += +item.amount;
         change += +item.change;
         rate += change / item.amount;
@@ -370,6 +369,9 @@ const DepositsPage = () => {
     listAssetTotalByCurrency().then((res) => {
       setCurrencySummary(res.data);
     });
+    listAssetTotalByProduct().then((res) => {
+      setProductSummary(res.data);
+    });
   }, []);
 
   useEffect(() => {
@@ -548,6 +550,11 @@ const DepositsPage = () => {
         <Grid container spacing={2}>
           <Grid item xs={12}>
             <AssetCurrencyBarCard data={currencySummary} />
+          </Grid>
+        </Grid>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
+            <AssetProductBarCard data={productSummary} />
           </Grid>
         </Grid>
         <DepositDialog open={dialogOpen} onClose={handleCloseDialog} onSubmit={handleSubmit} />

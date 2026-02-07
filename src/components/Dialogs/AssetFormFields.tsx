@@ -1,22 +1,6 @@
 ﻿import type { ReactNode } from "react";
 import { MenuItem, Stack, TextField } from "@mui/material";
-import type { DepositFormValues } from "@/validation/deposit";
-
-type AssetType = DepositFormValues["type"];
-type RiskLevel = DepositFormValues["riskLevel"];
-
-const assetTypes: readonly { value: AssetType; label: string }[] = [
-  { value: "deposit", label: "存款" },
-  { value: "investment", label: "投资" },
-  { value: "securities", label: "证券" },
-  { value: "other", label: "其他" },
-];
-
-const riskLevels: readonly { label: string; value: RiskLevel }[] = [
-  { label: "灵活型", value: "flexible" },
-  { label: "稳健型", value: "stable" },
-  { label: "高风险型", value: "high_risk" },
-];
+import { AssetTypes, RiskLevelTypes, type DepositFormValues } from "@/validation/deposit";
 
 type Props = {
   form: DepositFormValues;
@@ -48,7 +32,7 @@ const AssetFormFields = ({ form, errors, currencyOptions, onChange, afterType }:
         error={!!errors.type}
         helperText={errors.type}
       >
-        {assetTypes.map((option) => (
+        {AssetTypes.map((option) => (
           <MenuItem key={option.value} value={option.value}>
             {option.label}
           </MenuItem>
@@ -81,7 +65,7 @@ const AssetFormFields = ({ form, errors, currencyOptions, onChange, afterType }:
         error={!!errors.riskLevel}
         helperText={errors.riskLevel}
       >
-        {riskLevels.map((option) => (
+        {RiskLevelTypes.map((option) => (
           <MenuItem key={option.value} value={option.value}>
             {option.label}
           </MenuItem>

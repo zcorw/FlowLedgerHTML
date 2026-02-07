@@ -55,7 +55,7 @@ export type CurrencyAssetItem = {
   amount: number;
   change: number;
   rate: number;
-  currency: string;
+  target: string;
 }
 
 export type AssetCurrencyResponse = {
@@ -117,11 +117,20 @@ export async function monthlyAssetChange(): Promise<LatestTotalAssetList> {
 
 /**
  * List total assets by common currencies (including FX assets).
- * GET /custom/assets/summary/by-currency
+ * GET /custom/total/products/compare
  * Response: CurrencyAssetSummary[]
  */
 export async function listAssetTotalByCurrency() {
-  return get<AssetCurrencyResponse>('/custom/total/assets/currency');
+  return get<AssetCurrencyResponse>('/custom/total/products/compare', { params:{ key: 'currency' }});
+}
+
+/**
+ * List total assets by common product types (including FX assets).
+ * GET /custom/total/products/compare
+ * Response: CurrencyAssetSummary[]
+ */
+export async function listAssetTotalByProduct() {
+  return get<AssetCurrencyResponse>('/custom/total/products/compare', { params:{ key: 'product_type' }});
 }
 
 /**

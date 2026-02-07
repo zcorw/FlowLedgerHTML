@@ -75,31 +75,30 @@ const RegisterPage = () => {
             <form onSubmit={handleSubmit}>
               <Stack spacing={2}>
                 <FormControl fullWidth error={Boolean(errors.email)}>
-                  <FormLabel>邮箱</FormLabel>
                   <TextField
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="hi@flow-ledger.io"
                     fullWidth
                     variant="outlined"
+                    label="邮箱"
                   />
                   <FormHelperText>{errors.email || '用于登录与找回密码'}</FormHelperText>
                 </FormControl>
 
                 <FormControl fullWidth error={Boolean(errors.username)}>
-                  <FormLabel>用户名</FormLabel>
                   <TextField
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="yourname"
                     fullWidth
                     variant="outlined"
+                    label="用户名"
                   />
                   <FormHelperText>{errors.username || '仅支持字母/数字/下划线'}</FormHelperText>
                 </FormControl>
 
                 <FormControl fullWidth error={Boolean(errors.password)}>
-                  <FormLabel>密码</FormLabel>
                   <TextField
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -107,6 +106,7 @@ const RegisterPage = () => {
                     placeholder="至少 8 位，推荐 12 位复杂密码"
                     fullWidth
                     variant="outlined"
+                    label="密码"
                   />
                   <FormHelperText>{errors.password || '建议 12 位及以上复杂密码'}</FormHelperText>
                 </FormControl>

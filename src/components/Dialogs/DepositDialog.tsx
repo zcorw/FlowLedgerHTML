@@ -12,7 +12,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
-import { depositSchema, institutionSchema, type DepositFormValues, type InstitutionFormValues } from "@/validation/deposit";
+import { depositSchema, institutionSchema, InstitutionTypes, type DepositFormValues, type InstitutionFormValues } from "@/validation/deposit";
 import { enqueueSnackbar } from '@/store/snackbar';
 import InstitutionSelect from "@/components/InstitutionSelect";
 import type { Institution, Product } from "@/api/deposits";
@@ -32,11 +32,7 @@ type Props = {
   onSubmit: (payload: DepositSubmitPayload) => Promise<Product | Institution>;
 };
 
-const institutionTypes: readonly { label: string; value: InstitutionFormValues["type"] }[] = [
-  { label: "银行", value: "bank" },
-  { label: "券商", value: "broker" },
-  { label: "其他", value: "other" },
-];
+
 
 const buildDefaultAssetForm = (): DepositFormValues => ({
   name: "",
@@ -196,7 +192,7 @@ const DepositDialog = ({ open, onClose, onSubmit }: Props) => {
                 error={!!institutionErrors.type}
                 helperText={institutionErrors.type}
               >
-                {institutionTypes.map((option) => (
+                {InstitutionTypes.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
                   </MenuItem>
