@@ -5,7 +5,6 @@ import {
   Chip,
   FormControl,
   FormHelperText,
-  FormLabel,
   Link as MuiLink,
   Paper,
   Stack,

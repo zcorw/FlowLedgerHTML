@@ -19,12 +19,10 @@ import { enqueueSnackbar } from "@/store/snackbar";
 import { expenseSchema, type ExpenseFormValues } from "@/validation/expense";
 import useDatePicker from "@/hooks/useDatePicker";
 
-export type ExpenseDialogPayload = ExpenseCreate;
-
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSubmit: (payload: ExpenseDialogPayload) => Promise<void> | void;
+  onSubmit: (payload: ExpenseCreate) => Promise<void> | void;
   categories: Category[];
   currencyOptions: { label: string; value: string }[];
   defaultCurrency?: string;
@@ -37,7 +35,6 @@ const buildDefaultForm = (currency: string): ExpenseFormValues => ({
   categoryId: "",
   merchant: "",
   occurredAt: dayjs().format("YYYY-MM-DD"),
-  note: "",
   paidAccountId: null,
   fileId: null,
 });
@@ -77,7 +74,6 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
       categoryId: form.categoryId || undefined,
       merchant: form.merchant || undefined,
       occurredAt: form.occurredAt,
-      note: form.note || undefined,
     });
     if (!parsed.success) {
       const nextErrors: Partial<Record<keyof ExpenseFormValues, string>> = {};
@@ -98,7 +94,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
     if (isSaving) return;
     if (!validate()) return;
 
-    const payload: ExpenseDialogPayload = {
+    const payload: ExpenseCreate = {
       name: form.name.trim(),
       amount: form.amount.trim(),
       currency: form.currency,
@@ -107,8 +103,9 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
       paid_account_id: form.paidAccountId || null,
       occurred_at: dayjs(form.occurredAt).startOf("day").toISOString(),
       source_ref: null,
-      note: form.note?.trim() || null,
       file_id: form.fileId || null,
+      // 备注来源于网页手动输入
+      note: "Imported manually by web page",
     };
 
     setIsSaving(true);
@@ -242,13 +239,6 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
               onClick: openDatePicker,
               onFocus: openDatePicker,
             }}
-          />
-          <TextField
-            label="备注"
-            value={form.note}
-            onChange={(e) => handleChange("note", e.target.value)}
-            placeholder="如：午餐"
-            fullWidth
           />
         </Stack>
       </DialogContent>
