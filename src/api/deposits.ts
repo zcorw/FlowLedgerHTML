@@ -219,6 +219,15 @@ export type LatestBalanceBatchResult = {
   items: LatestBalanceResult[];
 }
 
+export type InstitutionMostUsed = {
+  id: number;
+  name: string;
+  usage_count: number;
+};
+
+export type InstitutionMostUsedList = {
+  data: InstitutionMostUsed[];
+};
 
 /**
  * 机构列表（分页，可按类型过滤）
@@ -354,4 +363,11 @@ export async function createLatestBalance(institution_id: number, payload: Lates
  */
 export async function exportBalances() {
   return get<Blob>(`/export/deposit`, { responseType: 'blob' });
+}
+
+/**
+ * 获取最常用机构列表。
+ */
+export async function getMostInstitution(limit: number) {
+  return get<InstitutionMostUsedList[]>('/institutions/most-used', { params: { limit } });
 }

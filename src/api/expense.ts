@@ -96,6 +96,16 @@ export type ReceiptImportResult = {
   data: ReceiptRecognitionResult;
 }
 
+export type CategoryMostUsed = {
+  id: number;
+  name: string;
+  usage_count: number;
+};
+
+export type CategoryMostUsedList = {
+  data: CategoryMostUsed[];
+};
+
 const IMPORT_POLL_INTERVAL_MS = 1500;
 const IMPORT_POLL_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -226,4 +236,13 @@ export async function importExpenseReceipt(file: File | Blob): Promise<ReceiptIm
  */
 export async function createExpenseBatch(payload: ExpenseBatchCreateParams) {
   return post<ExpenseBatchCreateResult>('/expenses/batch', payload);
+}
+
+/**
+ * Get most used categories.
+ * GET /categories/most-used
+ * Response: CategoryMostUsedList
+ */
+export async function getMostCategories(limit: number = 10) {
+  return get<CategoryMostUsedList>('/categories/most-used', { params: { limit } });
 }
