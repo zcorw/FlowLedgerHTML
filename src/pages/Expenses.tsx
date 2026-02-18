@@ -266,20 +266,19 @@ const ExpensesPage = () => {
           page_size: rowsPerPage,
           from: range.from,
           to: range.to,
+          category_id: selectedCategory === "all" ? undefined : selectedCategory,
         };
         const res: ExpenseList = await listExpenses(params);
 
         const keyword = tableFilter.keyword.trim().toLowerCase();
         const filtered = res.data.filter((item) => {
           const matchesCurrency = tableFilter.currency === "all" || item.currency === tableFilter.currency;
-          const matchesCategory =
-            selectedCategory === "all" || String(item.category_id ?? "") === selectedCategory;
           const matchesKeyword = !keyword
             ? true
             : [item.note, item.merchant, item.source_ref].some((field) =>
                 field ? field.toLowerCase().includes(keyword) : false
               );
-          return matchesCurrency && matchesCategory && matchesKeyword;
+          return matchesCurrency && matchesKeyword;
         });
 
         setExpenseById(
