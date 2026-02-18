@@ -16,6 +16,7 @@ import {
   createExpense,
   deleteExpense,
   listExpenses,
+  updateExpense,
   type Expense,
   type ExpenseCreate,
   type ExpenseList,
@@ -132,6 +133,8 @@ const ExpensesPage = () => {
   const [dailyChangeRate, setDailyChangeRate] = useState(0);
   const [confirmState, setConfirmState] = useState<{ open: boolean; row?: ExpenseRow }>({ open: false });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [expenseById, setExpenseById] = useState<Record<string, Expense>>({});
   const [deleting, setDeleting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -279,6 +282,13 @@ const ExpensesPage = () => {
           return matchesCurrency && matchesCategory && matchesKeyword;
         });
 
+        setExpenseById(
+          filtered.reduce<Record<string, Expense>>((acc, item) => {
+            acc[String(item.id)] = item;
+            return acc;
+          }, {})
+        );
+
         setRows(
           filtered.map((item) => ({
             id: String(item.id),
@@ -353,11 +363,31 @@ const ExpensesPage = () => {
     fetchDailyStats();
   }, [dailyPeriod, refreshKey]);
 
-  const handleOpenDialog = () => setDialogOpen(true);
-  const handleCloseDialog = () => setDialogOpen(false);
+  const handleOpenDialog = () => {
+    setEditingExpense(null);
+    setDialogOpen(true);
+  };
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingExpense(null);
+  };
 
-  const handleCreateExpense = async (payload: ExpenseCreate) => {
-    await createExpense(payload);
+  const handleEditRequest = (row: ExpenseRow) => {
+    const expense = expenseById[row.id];
+    if (!expense) {
+      enqueueSnackbar("未找到该消费记录，请刷新后重试", { severity: "error" });
+      return;
+    }
+    setEditingExpense(expense);
+    setDialogOpen(true);
+  };
+
+  const handleSubmitExpense = async (payload: ExpenseCreate) => {
+    if (editingExpense) {
+      await updateExpense(editingExpense.id, payload);
+    } else {
+      await createExpense(payload);
+    }
     setRefreshKey((prev) => prev + 1);
     setPage(1);
   };
@@ -415,6 +445,7 @@ const ExpensesPage = () => {
             page={page}
             pageCount={pageCount}
             onPageChange={(value) => setPage(value)}
+            onEdit={handleEditRequest}
             onDelete={handleDeleteRequest}
             chips={categoryOptions.map((option) => (
               <Chip
@@ -445,7 +476,9 @@ const ExpensesPage = () => {
       <ExpenseDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
-        onSubmit={handleCreateExpense}
+        onSubmit={handleSubmitExpense}
+        mode={editingExpense ? "edit" : "create"}
+        initialExpense={editingExpense}
         categories={categories}
         currencyOptions={currencyOptions.filter((opt) => opt.value !== "all")}
         defaultCurrency={defaultCurrency}

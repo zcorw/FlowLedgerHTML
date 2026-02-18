@@ -84,7 +84,7 @@ const ExpenseDetailsCard = (_props: ExpenseDetailsCardProps) => {
                       size="small"
                       onClick={() => _props.onEdit && _props.onEdit(row)}
                     >
-                      编辑
+                      修改
                     </Button>
                   )}
                   {_props.onDelete && (

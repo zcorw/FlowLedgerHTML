@@ -14,7 +14,7 @@ import {
 import InstitutionSelect from "../InstitutionSelect";
 import dayjs from "dayjs";
 import { importExpenseReceipt } from "@/api/expense";
-import type { Category, ExpenseCreate } from "@/api/expense";
+import type { Category, Expense, ExpenseCreate } from "@/api/expense";
 import { enqueueSnackbar } from "@/store/snackbar";
 import { expenseSchema, type ExpenseFormValues } from "@/validation/expense";
 import useDatePicker from "@/hooks/useDatePicker";
@@ -26,6 +26,8 @@ type Props = {
   categories: Category[];
   currencyOptions: { label: string; value: string }[];
   defaultCurrency?: string;
+  mode?: "create" | "edit";
+  initialExpense?: Expense | null;
 };
 
 const buildDefaultForm = (currency: string): ExpenseFormValues => ({
@@ -39,7 +41,27 @@ const buildDefaultForm = (currency: string): ExpenseFormValues => ({
   fileId: null,
 });
 
-const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, defaultCurrency }: Props) => {
+const buildEditForm = (expense: Expense, fallbackCurrency: string): ExpenseFormValues => ({
+  name: expense.name || "",
+  amount: expense.amount || "",
+  currency: expense.currency || fallbackCurrency,
+  categoryId: expense.category_id != null ? String(expense.category_id) : "",
+  merchant: expense.merchant || "",
+  occurredAt: dayjs(expense.occurred_at).format("YYYY-MM-DD"),
+  paidAccountId: expense.paid_account_id ?? null,
+  fileId: expense.file_id ?? null,
+});
+
+const ExpenseDialog = ({
+  open,
+  onClose,
+  onSubmit,
+  categories,
+  currencyOptions,
+  defaultCurrency,
+  mode = "create",
+  initialExpense,
+}: Props) => {
   const fallbackCurrency = defaultCurrency || currencyOptions[0]?.value || "CNY";
   const [form, setForm] = useState<ExpenseFormValues>(() => buildDefaultForm(fallbackCurrency));
   const [errors, setErrors] = useState<Partial<Record<keyof ExpenseFormValues, string>>>({});
@@ -55,13 +77,17 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
 
   useEffect(() => {
     if (open) {
-      setForm(buildDefaultForm(fallbackCurrency));
+      if (mode === "edit" && initialExpense) {
+        setForm(buildEditForm(initialExpense, fallbackCurrency));
+      } else {
+        setForm(buildDefaultForm(fallbackCurrency));
+      }
       setErrors({});
       setIsSaving(false);
     }
-  }, [open, fallbackCurrency]);
+  }, [open, fallbackCurrency, mode, initialExpense]);
 
-  const handleChange = (key: keyof ExpenseFormValues, value: string) => {
+  const handleChange = <K extends keyof ExpenseFormValues>(key: K, value: ExpenseFormValues[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
@@ -104,14 +130,13 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
       occurred_at: dayjs(form.occurredAt).startOf("day").toISOString(),
       source_ref: null,
       file_id: form.fileId || null,
-      // 备注来源于网页手动输入
-      note: "Imported manually by web page",
+      note: mode === "edit" ? (initialExpense?.note ?? null) : "Imported manually by web page",
     };
 
     setIsSaving(true);
     try {
       await onSubmit(payload);
-      enqueueSnackbar("消费记录已添加", { severity: "success" });
+      enqueueSnackbar(mode === "edit" ? "消费记录已更新" : "消费记录已添加", { severity: "success" });
       onClose();
     } catch (error: any) {
       const message = error?.response?.data?.error?.message || error?.message || "提交失败，请稍后重试";
@@ -153,7 +178,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
         <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-          <span>添加消费记录</span>
+          <span>{mode === "edit" ? "修改消费记录" : "添加消费记录"}</span>
           <Button onClick={handleReceiptClick} disabled={uploadingReceipt}>{ uploadingReceipt ? "识别中..." : "识别小票" }</Button>
           <input
             ref={receiptInputRef}
@@ -202,7 +227,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
               </MenuItem>
             ))}
           </TextField>
-          <InstitutionSelect value={form.paidAccountId} onChange={(id) => handleChange("paidAccountId", String(id))} />
+          <InstitutionSelect value={form.paidAccountId} onChange={(id) => handleChange("paidAccountId", id)} />
           </Stack>
           <TextField
             label="分类"
@@ -252,7 +277,7 @@ const ExpenseDialog = ({ open, onClose, onSubmit, categories, currencyOptions, d
           disabled={isSaving}
           startIcon={isSaving ? <CircularProgress size={20} color="inherit" /> : undefined}
         >
-          {isSaving ? "保存中..." : "保存"}
+          {isSaving ? "保存中..." : mode === "edit" ? "更新" : "保存"}
         </Button>
       </DialogActions>
     </Dialog>
