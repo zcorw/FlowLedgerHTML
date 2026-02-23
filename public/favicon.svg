@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Flow Ledger icon">
+  <defs>
+    <linearGradient id="fl-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#64d8ce" />
+      <stop offset="100%" stop-color="#f2c14e" />
+    </linearGradient>
+    <filter id="fl-glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#64d8ce" flood-opacity="0.35" />
+    </filter>
+  </defs>
+  <rect x="8" y="8" width="48" height="48" rx="8" fill="url(#fl-gradient)" filter="url(#fl-glow)" />
+  <text
+    x="32"
+    y="32"
+    fill="#0f172a"
+    font-family="system-ui, -apple-system, Segoe UI, Arial, sans-serif"
+    font-size="22"
+    font-weight="700"
+    letter-spacing="0.6"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >
+    FL
+  </text>
+</svg>
